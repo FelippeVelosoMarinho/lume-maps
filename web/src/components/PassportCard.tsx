@@ -1,4 +1,5 @@
-import type { CSSProperties, ReactNode } from 'react'
+import type { ChangeEvent, CSSProperties, ReactNode } from 'react'
+import { Camera } from 'lucide-react'
 import type { Passport, Stamp } from '../lib/api'
 import { AnalogPhoto } from './AnalogPhoto'
 import { formatPeriod } from '../lib/dates'
@@ -91,12 +92,45 @@ function StarFrame({ children }: { children: ReactNode }) {
   )
 }
 
-export function PassportCard({ passport }: { passport: Passport }) {
+type PassportCardProps = {
+  passport: Passport
+  /** Dono: permite trocar a foto no hover da fotografia */
+  onPhotoChange?: (file: File) => void | Promise<void>
+}
+
+export function PassportCard({ passport, onPhotoChange }: PassportCardProps) {
+  function onFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (file) void onPhotoChange?.(file)
+  }
+
   return (
     <StarFrame>
       <div className="grid md:grid-cols-[150px_1fr] gap-5 md:gap-7 items-start">
         <div className="flex flex-col items-center gap-2">
-          {passport.photo_url ? (
+          {onPhotoChange ? (
+            <label className="passport-photo-edit group cursor-pointer block relative">
+              <input type="file" accept="image/*" className="sr-only" onChange={onFile} />
+              {passport.photo_url ? (
+                <AnalogPhoto
+                  src={passport.photo_url}
+                  alt={passport.display_name}
+                  imgClassName="h-40 w-36"
+                  className="!rotate-0 pointer-events-none"
+                />
+              ) : (
+                <div className="w-36 h-40 border border-dashed border-ink/40 bg-sand/40 flex items-center justify-center text-earth/60 text-xs text-center p-3">
+                  Sem foto
+                </div>
+              )}
+              <span className="passport-photo-edit__overlay" aria-hidden>
+                <Camera size={22} strokeWidth={1.75} />
+                <span className="text-[11px] font-medium mt-1">Trocar foto</span>
+              </span>
+              <span className="sr-only">Trocar fotografia do viajante</span>
+            </label>
+          ) : passport.photo_url ? (
             <AnalogPhoto
               src={passport.photo_url}
               alt={passport.display_name}
@@ -127,29 +161,27 @@ export function PassportCard({ passport }: { passport: Passport }) {
             <Field label="Data de emissão" value={formatDate(passport.issued_at)} />
           </dl>
 
-          <div className="mt-5 relative pr-0 md:pr-28">
+          <div className="mt-5 relative md:pr-28">
             <p className="font-mono text-[11px] uppercase tracking-wider text-center text-ink mb-1.5">
               Licença de viagem
             </p>
             <p className="font-mono text-[11px] md:text-xs leading-relaxed text-ink/90 text-justify">
-              Certifica-se que a pessoa nomeada e descrita acima está autorizada a viajar e explorar
-              livremente, salvo se retida pela lei.
+            Certifica-se que a pessoa nomeada e descrita acima está autorizada a viajar, circular e explorar livremente, salvo se impedida por lei.
             </p>
             <p className="font-mono text-[11px] uppercase tracking-wider text-center text-ink mt-3 mb-1.5">
-              Importante
+            Aviso Importante
             </p>
             <p className="font-mono text-[11px] md:text-xs leading-relaxed text-ink/90 text-justify">
-              {passport.bio?.trim()
-                ? passport.bio
-                : 'O portador desta licença registra mapas, lugares e memórias de suas viagens no Lume Maps, salvo indicação em contrário.'}
+              O portador desta licença registra os mapas, caminhos e memórias de suas viagens neste modesto espaço como e quando bem entender, salvo indicação em contrário.
             </p>
 
+            {/* Um único carimbo: abaixo no mobile, sobreposto à direita no desktop */}
             <div
-              className="passport-ink-stamp absolute -right-1 md:right-0 top-[42%] -translate-y-1/2 pointer-events-none select-none"
+              className="passport-ink-stamp mt-5 mx-auto md:mt-0 md:mx-0 md:absolute md:right-0 md:top-[42%] md:-translate-y-1/2 pointer-events-none select-none"
               aria-hidden
             >
               <span>Lume Maps</span>
-              <span className="passport-ink-stamp__sub">perdidos juntos</span>
+              <span className="passport-ink-stamp__sub">{passport.passport_number}</span>
             </div>
           </div>
 
@@ -175,9 +207,11 @@ function Field({
   handwritten?: boolean
 }) {
   return (
-    <div className="grid grid-cols-[140px_1fr] gap-2 items-end doc-field">
+    <div className="grid grid-cols-1 sm:grid-cols-[minmax(7rem,140px)_minmax(0,1fr)] gap-0.5 sm:gap-2 items-end doc-field min-w-0">
       <dt className="text-[11px] text-ink/75">{label}</dt>
-      <dd className={handwritten ? 'font-script text-2xl leading-none' : 'font-medium'}>{value}</dd>
+      <dd className={`min-w-0 break-words ${handwritten ? 'font-script text-2xl leading-none' : 'font-medium'}`}>
+        {value}
+      </dd>
     </div>
   )
 }

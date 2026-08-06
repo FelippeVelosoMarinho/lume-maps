@@ -64,6 +64,7 @@ class JourneySummary(BaseModel):
     started_on: date | None
     ended_on: date | None
     color: str | None = None
+    is_mine: bool = True
 
 
 class PassportOut(BaseModel):

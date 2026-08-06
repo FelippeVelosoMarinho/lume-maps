@@ -311,9 +311,7 @@ async def create_marker(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    journey = await _get_journey_full(db, slug)
-    if not journey or journey.owner_id != user.id:
-        raise HTTPException(status_code=404, detail="Viagem não encontrada")
+    journey = _require_edit(await _get_journey_full(db, slug), user)
 
     city_label = (data.title or data.city or "").strip()
     if not city_label:
@@ -533,9 +531,7 @@ async def set_primary_photo(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    journey = await _get_journey_full(db, slug)
-    if not journey or journey.owner_id != user.id:
-        raise HTTPException(status_code=404, detail="Viagem não encontrada")
+    journey = _require_edit(await _get_journey_full(db, slug), user)
     marker = next((m for m in journey.markers if m.id == marker_id), None)
     if not marker:
         raise HTTPException(status_code=404, detail="Marcador não encontrado")
@@ -698,6 +694,32 @@ async def remove_companion(
     await db.commit()
 
 
+@router.post("/journeys/{slug}/join", response_model=dict)
+async def join_journey(
+    slug: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Visitante autenticado entra no mapa público — passa a ver no próprio passaporte."""
+    journey = await _get_journey_full(db, slug)
+    if not journey or not journey.is_public:
+        raise HTTPException(status_code=404, detail="Viagem não encontrada")
+    if not user.passport:
+        raise HTTPException(status_code=400, detail="Crie um passaporte para entrar no mapa")
+    if _is_owner(journey, user):
+        cmap = build_journey_color_map([journey])
+        return {"joined": False, "journey": _journey_out(journey, cmap)}
+    if _is_companion(journey, user):
+        cmap = build_journey_color_map([journey])
+        return {"joined": False, "journey": _journey_out(journey, cmap)}
+    db.add(JourneyCompanion(journey_id=journey.id, user_id=user.id))
+    await db.commit()
+    journey = await _get_journey_full(db, slug)
+    assert journey
+    cmap = build_journey_color_map([journey])
+    return {"joined": True, "journey": _journey_out(journey, cmap)}
+
+
 @router.get("/passports/{username}", response_model=PassportOut)
 async def get_passport(username: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
@@ -715,9 +737,21 @@ async def get_passport(username: str, db: AsyncSession = Depends(get_db)):
     journeys_result = await db.execute(
         select(Journey).where(Journey.owner_id == passport.user_id)
     )
-    all_journeys = list(journeys_result.scalars().all())
+    owned_journeys = list(journeys_result.scalars().all())
+
+    companion_result = await db.execute(
+        select(Journey)
+        .join(JourneyCompanion, JourneyCompanion.journey_id == Journey.id)
+        .where(JourneyCompanion.user_id == passport.user_id)
+    )
+    companion_journeys = list(companion_result.scalars().all())
+
+    by_id: dict[str, Journey] = {j.id: j for j in owned_journeys}
+    for j in companion_journeys:
+        by_id.setdefault(j.id, j)
+    all_journeys = list(by_id.values())
     public_journeys = [j for j in all_journeys if j.is_public]
-    journey_by_id = {j.id: j for j in all_journeys}
+    journey_by_id = by_id
     color_map = build_journey_color_map(all_journeys)
 
     # Agrupa carimbos pela cidade: 1 selo por cidade; cores misturadas se em vários mapas
@@ -782,6 +816,7 @@ async def get_passport(username: str, db: AsyncSession = Depends(get_db)):
     for j in public_journeys:
         js = JourneySummary.model_validate(j)
         js.color = color_map.get(j.id)
+        js.is_mine = j.owner_id == passport.user_id
         journey_summaries.append(js)
     pout.journeys = journey_summaries
     return pout
@@ -804,10 +839,33 @@ async def get_passport_travels(username: str, db: AsyncSession = Depends(get_db)
         )
         .order_by(Journey.created_at)
     )
-    journeys = list(journeys_result.scalars().all())
-    # Cores alinhadas com o passaporte (todas as viagens do usuário)
-    all_result = await db.execute(select(Journey).where(Journey.owner_id == passport.user_id))
-    color_map = build_journey_color_map(list(all_result.scalars().all()))
+    owned = list(journeys_result.scalars().all())
+
+    companion_result = await db.execute(
+        select(Journey)
+        .join(JourneyCompanion, JourneyCompanion.journey_id == Journey.id)
+        .where(
+            JourneyCompanion.user_id == passport.user_id,
+            Journey.is_public == True,  # noqa: E712
+        )
+        .options(
+            selectinload(Journey.markers).selectinload(Marker.attachments),
+        )
+        .order_by(Journey.created_at)
+    )
+    companion = list(companion_result.scalars().all())
+    by_id: dict[str, Journey] = {j.id: j for j in owned}
+    for j in companion:
+        by_id.setdefault(j.id, j)
+    journeys = list(by_id.values())
+
+    # Cores alinhadas com o passaporte (próprias + mapas em que participa)
+    all_ids = list(by_id.keys())
+    color_source = journeys
+    if all_ids:
+        all_result = await db.execute(select(Journey).where(Journey.id.in_(all_ids)))
+        color_source = list(all_result.scalars().all())
+    color_map = build_journey_color_map(color_source)
 
     out_journeys: list[TravelJourneyOut] = []
     for j in journeys:

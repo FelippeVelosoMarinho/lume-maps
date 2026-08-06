@@ -49,10 +49,16 @@ type Props = {
   onChanged: () => void | Promise<void>
   onSelect: (id: string) => void
   onStamped?: (marker: Marker) => void
+  /** Esconde FAB/painel quando outro sheet está aberto */
+  hidden?: boolean
 }
 
-export function StampDock({ slug, markers, onChanged, onSelect, onStamped }: Props) {
+export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidden }: Props) {
   const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (hidden) setOpen(false)
+  }, [hidden])
   const [q, setQ] = useState('')
   const [hits, setHits] = useState<Hit[]>([])
   const [busy, setBusy] = useState(false)
@@ -180,12 +186,14 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped }: Pro
     await commitOrder(orderedRef.current)
   }
 
+  if (hidden) return null
+
   return (
     <div className="map-ui-overlay pointer-events-none">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="pointer-events-auto absolute left-3 bottom-4 md:bottom-6 w-14 h-14 rounded-full bg-earth text-cream shadow-xl border-2 border-paper flex items-center justify-center hover:brightness-110"
+        className="pointer-events-auto absolute left-3 bottom-[max(1rem,env(safe-area-inset-bottom))] md:bottom-6 w-14 h-14 rounded-full bg-earth text-cream shadow-xl border-2 border-paper flex items-center justify-center hover:brightness-110"
         title={open ? 'Fechar' : 'Adicionar carimbo'}
         aria-label={open ? 'Fechar menu de carimbo' : 'Adicionar carimbo'}
         aria-expanded={open}
@@ -194,14 +202,14 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped }: Pro
       </button>
 
       {open && (
-        <aside className="pointer-events-auto absolute left-3 bottom-20 md:bottom-24 w-[min(92vw,340px)] max-h-[70vh] overflow-y-auto doc-frame bg-paper text-ink shadow-2xl paper-grain z-[1300]">
+        <aside className="pointer-events-auto absolute left-3 right-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] md:right-auto md:bottom-24 w-auto md:w-[340px] max-w-[340px] max-h-[min(70dvh,28rem)] overflow-y-auto doc-frame bg-paper text-ink shadow-2xl paper-grain z-[1300]">
           <div className="sticky top-0 bg-paper/95 backdrop-blur border-b border-dashed border-ink/20 px-3 py-2.5 flex items-center justify-between">
             <p className="font-display text-sm uppercase flex items-center gap-2">
               <Stamp size={16} className="text-stamp" />
               Carimbar cidade
             </p>
-            <button type="button" onClick={() => setOpen(false)} className="p-1 hover:bg-sand rounded-full" aria-label="Fechar">
-              <X size={16} />
+            <button type="button" onClick={() => setOpen(false)} className="p-2 hover:bg-sand rounded-full" aria-label="Fechar">
+              <X size={18} />
             </button>
           </div>
 
@@ -283,7 +291,7 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped }: Pro
                       <button
                         type="button"
                         disabled={busy || i === 0}
-                        className="p-1.5 disabled:opacity-30 hover:bg-sand rounded text-earth"
+                        className="min-w-10 min-h-10 p-2 disabled:opacity-30 hover:bg-sand rounded text-earth inline-flex items-center justify-center"
                         onClick={(e) => {
                           e.stopPropagation()
                           void move(i, -1)
@@ -296,7 +304,7 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped }: Pro
                       <button
                         type="button"
                         disabled={busy || i === ordered.length - 1}
-                        className="p-1.5 disabled:opacity-30 hover:bg-sand rounded text-earth"
+                        className="min-w-10 min-h-10 p-2 disabled:opacity-30 hover:bg-sand rounded text-earth inline-flex items-center justify-center"
                         onClick={(e) => {
                           e.stopPropagation()
                           void move(i, 1)

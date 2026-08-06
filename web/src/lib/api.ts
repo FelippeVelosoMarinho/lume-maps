@@ -31,6 +31,8 @@ export type JourneySummary = {
   started_on: string | null
   ended_on: string | null
   color?: string | null
+  /** false quando o mapa é de outra pessoa (companheiro) */
+  is_mine?: boolean
 }
 
 export type Passport = {
@@ -325,6 +327,14 @@ class ApiClient {
     return this.request<Companion[]>(`/journeys/${slug}/companions`, {
       method: 'POST',
       body: JSON.stringify({ username }),
+    })
+  }
+
+  /** Entra no mapa (companheiro) — passa a aparecer no próprio passaporte. */
+  joinJourney(slug: string) {
+    return this.request<{ joined: boolean; journey: Journey }>(`/journeys/${slug}/join`, {
+      method: 'POST',
+      silent: true,
     })
   }
 

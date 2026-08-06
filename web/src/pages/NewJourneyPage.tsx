@@ -63,8 +63,8 @@ export function NewJourneyPage() {
               <span className="text-[11px] uppercase text-earth">Descrição</span>
               <input name="subtitle" className="mt-1 w-full border border-dashed border-ink/30 bg-cream/70 px-3 py-2" />
             </label>
-            <fieldset className="grid grid-cols-2 gap-3">
-              <legend className="text-[11px] uppercase text-earth col-span-2">Período da viagem</legend>
+            <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <legend className="text-[11px] uppercase text-earth col-span-full">Período da viagem</legend>
               <label className="block text-sm">
                 <span className="text-[10px] text-earth">Início</span>
                 <input

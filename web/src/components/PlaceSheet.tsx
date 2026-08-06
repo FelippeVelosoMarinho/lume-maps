@@ -143,24 +143,30 @@ export function PlaceSheet({
   return (
     <>
       <aside className="map-ui-overlay !pointer-events-none">
-        <div className="pointer-events-auto absolute inset-x-0 bottom-0 md:inset-y-4 md:left-4 md:right-auto md:bottom-4 md:w-[380px] max-h-[75vh] md:max-h-[calc(100%-2rem)] overflow-y-auto rounded-t-2xl md:rounded-sm border border-ink/25 bg-paper shadow-2xl paper-grain doc-frame">
+        <button
+          type="button"
+          className="pointer-events-auto absolute inset-0 bg-ink/20 md:bg-transparent"
+          aria-label="Fechar painel"
+          onClick={onClose}
+        />
+        <div className="pointer-events-auto absolute inset-x-0 bottom-0 md:inset-y-4 md:left-4 md:right-auto md:bottom-4 md:w-[min(380px,calc(100%-2rem))] max-h-[min(75dvh,32rem)] md:max-h-[calc(100%-2rem)] overflow-y-auto rounded-t-2xl md:rounded-sm border border-ink/25 bg-paper shadow-2xl paper-grain doc-frame pb-[env(safe-area-inset-bottom)]">
           <div className="sticky top-0 bg-paper/95 backdrop-blur border-b border-dashed border-ink/20 px-4 py-3 flex items-start justify-between gap-3 z-10">
             <div className="min-w-0 flex-1">
-              <h2 className="font-display text-xl">{marker.title}</h2>
+              <h2 className="font-display text-lg sm:text-xl break-words">{marker.title}</h2>
               <p className="text-[10px] uppercase text-earth mt-0.5">Cidade do carimbo</p>
               {editable ? (
                 <input
-                  className="w-full mt-1 text-sm text-earth bg-transparent outline-none"
+                  className="w-full mt-1 text-sm text-earth bg-transparent outline-none min-w-0"
                   placeholder="Detalhe opcional (bairro, ponto…)"
                   value={subtitle}
                   onChange={(e) => setSubtitle(e.target.value)}
                   onBlur={() => void saveMeta()}
                 />
               ) : (
-                marker.subtitle && <p className="text-sm text-earth mt-1">{marker.subtitle}</p>
+                marker.subtitle && <p className="text-sm text-earth mt-1 break-words">{marker.subtitle}</p>
               )}
             </div>
-            <button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-sand" aria-label="Fechar">
+            <button type="button" onClick={onClose} className="p-2.5 min-w-10 min-h-10 rounded-full hover:bg-sand shrink-0 inline-flex items-center justify-center" aria-label="Fechar">
               <X size={18} />
             </button>
           </div>

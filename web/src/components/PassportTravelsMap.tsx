@@ -66,8 +66,8 @@ export function PassportTravelsMap({ journeys, className }: Props) {
 
   return (
     <div className={className ?? 'space-y-3'}>
-      <div className="h-[360px] md:h-[440px] rounded-sm overflow-hidden border border-ink/20">
-        <MapContainer center={center} zoom={5} className="h-full w-full warm-map" scrollWheelZoom>
+      <div className="h-[min(52dvh,360px)] sm:h-[360px] md:h-[440px] rounded-sm overflow-hidden border border-ink/20">
+        <MapContainer center={center} zoom={5} className="h-full w-full warm-map" scrollWheelZoom={false}>
           <TileLayer
             attribution="&copy; OSM &copy; CARTO"
             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"

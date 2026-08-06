@@ -31,6 +31,7 @@ function successMessage(method: string, path: string): string {
   if (p.includes('/reorder-markers')) return 'Ordem do caminho atualizada'
   if (p.includes('/companions') && m === 'POST') return 'Pessoa adicionada ao mapa'
   if (p.includes('/companions') && m === 'DELETE') return 'Pessoa removida do mapa'
+  if (p.endsWith('/join') && m === 'POST') return 'Mapa adicionado ao seu passaporte'
   if (p.includes('/markers') && m === 'POST' && !p.includes('/annotations') && !p.includes('/attachments')) {
     return 'Cidade carimbada'
   }

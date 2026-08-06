@@ -20,6 +20,7 @@
 
 html, body, #root {
   min-height: 100%;
+  min-height: 100dvh;
 }
 
 body {
@@ -30,6 +31,11 @@ body {
   background-image:
     radial-gradient(ellipse at 15% 0%, rgba(92, 61, 46, 0.08), transparent 45%),
     radial-gradient(ellipse at 85% 100%, rgba(47, 111, 115, 0.1), transparent 50%);
+  -webkit-text-size-adjust: 100%;
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top);
 }
 
 .lume-toast {
@@ -71,7 +77,8 @@ body {
 .passport-card {
   background: var(--color-paper);
   border: 1px solid var(--color-ink);
-  padding: 18px 16px;
+  padding: 14px 12px;
+  overflow: hidden;
 }
 
 .passport-stars {
@@ -169,6 +176,41 @@ body {
   max-width: 5.2rem;
 }
 
+.passport-photo-edit {
+  position: relative;
+  display: block;
+  border-radius: 2px;
+}
+
+.passport-photo-edit__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 21, 16, 0.55);
+  color: var(--color-cream);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  pointer-events: none;
+}
+
+.passport-photo-edit:hover .passport-photo-edit__overlay,
+.passport-photo-edit:focus-within .passport-photo-edit__overlay {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .passport-photo-edit__overlay {
+    opacity: 1;
+    background: linear-gradient(to top, rgba(26, 21, 16, 0.65), transparent 55%);
+    justify-content: flex-end;
+    padding-bottom: 0.65rem;
+  }
+}
+
 .star-border {
   height: 10px;
   background-color: var(--color-ink);
@@ -189,18 +231,28 @@ body {
 .chip {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.35rem;
   border: 1px solid color-mix(in srgb, var(--color-ink) 35%, transparent);
   background: var(--color-cream);
   color: var(--color-ink);
   border-radius: 9999px;
-  padding: 0.3rem 0.85rem;
+  padding: 0.45rem 0.9rem;
+  min-height: 2.25rem;
   font-size: 0.75rem;
   font-weight: 500;
   transition: background 0.15s ease;
+  touch-action: manipulation;
 }
 .chip:hover {
   background: var(--color-sand);
+}
+
+@media (max-width: 380px) {
+  .stamp-marker-label {
+    max-width: 84px;
+    font-size: 9px;
+  }
 }
 
 .stamp-seal {

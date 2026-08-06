@@ -25,13 +25,22 @@ function routeNodeIcon(title: string, index: number, active: boolean, photoUrl?:
   })
 }
 
-function FitBounds({ markers }: { markers: MarkerType[] }) {
+function FitBounds({ markers, bottomPad = 0 }: { markers: MarkerType[]; bottomPad?: number }) {
   const map = useMap()
   useEffect(() => {
     if (!markers.length) return
     const bounds = L.latLngBounds(markers.map((m) => [m.lat, m.lng]))
-    map.fitBounds(bounds, { padding: [48, 48], maxZoom: 12 })
-  }, [markers, map])
+    map.fitBounds(bounds, {
+      paddingTopLeft: [40, 40],
+      paddingBottomRight: [40, 40 + Math.max(0, Math.round(bottomPad * 0.45))],
+      maxZoom: 12,
+    })
+  }, [markers, map]) // eslint-disable-line react-hooks/exhaustive-deps -- only re-fit when markers change
+
+  useEffect(() => {
+    map.invalidateSize({ animate: false })
+  }, [bottomPad, map])
+
   return null
 }
 
@@ -52,9 +61,20 @@ type Props = {
   className?: string
   flyTo?: { lat: number; lng: number } | null
   pathColor?: string
+  /** Espaço inferior reservado para sheets (px) */
+  bottomPad?: number
 }
 
-export function WarmMap({ markers, selectedId, onSelect, onMapClick, className, flyTo, pathColor }: Props) {
+export function WarmMap({
+  markers,
+  selectedId,
+  onSelect,
+  onMapClick,
+  className,
+  flyTo,
+  pathColor,
+  bottomPad = 0,
+}: Props) {
   const ordered = useMemo(
     () => [...markers].sort((a, b) => a.sort_order - b.sort_order),
     [markers],
@@ -93,7 +113,7 @@ export function WarmMap({ markers, selectedId, onSelect, onMapClick, className, 
             }}
           />
         )}
-        <FitBounds markers={ordered} />
+        <FitBounds markers={ordered} bottomPad={bottomPad} />
         <FlyTo target={flyTo} />
         {onMapClick && <ClickHandler onClick={onMapClick} />}
         {ordered.map((m, i) => (
