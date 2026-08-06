@@ -63,6 +63,8 @@ type Props = {
   pathColor?: string
   /** Espaço inferior reservado para sheets (px) */
   bottomPad?: number
+  /** Prévia estática (sem zoom/arraste) */
+  preview?: boolean
 }
 
 export function WarmMap({
@@ -74,6 +76,7 @@ export function WarmMap({
   flyTo,
   pathColor,
   bottomPad = 0,
+  preview = false,
 }: Props) {
   const ordered = useMemo(
     () => [...markers].sort((a, b) => a.sort_order - b.sort_order),
@@ -94,7 +97,16 @@ export function WarmMap({
 
   return (
     <div className={className ?? 'h-full w-full'}>
-      <MapContainer center={center} zoom={8} className="h-full w-full warm-map" scrollWheelZoom>
+      <MapContainer
+        center={center}
+        zoom={8}
+        className="h-full w-full warm-map"
+        scrollWheelZoom={!preview}
+        dragging={!preview}
+        doubleClickZoom={!preview}
+        zoomControl={!preview}
+        attributionControl={!preview}
+      >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
@@ -114,8 +126,8 @@ export function WarmMap({
           />
         )}
         <FitBounds markers={ordered} bottomPad={bottomPad} />
-        <FlyTo target={flyTo} />
-        {onMapClick && <ClickHandler onClick={onMapClick} />}
+        {!preview && <FlyTo target={flyTo} />}
+        {onMapClick && !preview && <ClickHandler onClick={onMapClick} />}
         {ordered.map((m, i) => (
           <Marker
             key={m.id}
@@ -126,12 +138,16 @@ export function WarmMap({
               m.id === selectedId,
               m.primary_photo_url || m.attachments?.find((a) => a.is_primary)?.url || m.attachments?.find((a) => a.kind === 'photo')?.url,
             )}
-            eventHandlers={{
-              click: (e) => {
-                L.DomEvent.stopPropagation(e)
-                onSelect?.(m.id)
-              },
-            }}
+            eventHandlers={
+              preview || !onSelect
+                ? undefined
+                : {
+                    click: (e) => {
+                      L.DomEvent.stopPropagation(e)
+                      onSelect(m.id)
+                    },
+                  }
+            }
           />
         ))}
       </MapContainer>

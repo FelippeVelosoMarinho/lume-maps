@@ -67,14 +67,21 @@ export function JourneyEditMenu({
   }, [searchQ, isOwner])
 
   const photos = useMemo(() => {
-    const list: { url: string; title: string; markerId: string }[] = []
+    const list: { url: string; title: string; markerId: string; isPrimary: boolean }[] = []
     for (const m of [...journey.markers].sort((a, b) => a.sort_order - b.sort_order)) {
       for (const a of m.attachments.filter((x) => x.kind === 'photo')) {
-        list.push({ url: a.url, title: m.title, markerId: m.id })
+        list.push({
+          url: a.url,
+          title: m.title,
+          markerId: m.id,
+          isPrimary: !!a.is_primary,
+        })
       }
     }
-    return list.slice(0, 12)
+    return list.slice(0, 24)
   }, [journey.markers])
+
+  const coverUrl = journey.cover_url || null
 
   const places = useMemo(
     () => [...journey.markers].sort((a, b) => a.sort_order - b.sort_order),
@@ -115,6 +122,20 @@ export function JourneyEditMenu({
       await onChanged()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Não foi possível adicionar')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function setCover(url: string) {
+    setBusy(true)
+    setError('')
+    try {
+      const next = coverUrl === url ? null : url
+      const updated = await api.updateJourney(slug, { cover_url: next })
+      await onChanged(updated)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Não foi possível definir a capa')
     } finally {
       setBusy(false)
     }
@@ -263,24 +284,50 @@ export function JourneyEditMenu({
           </button>
 
           <section>
-            <p className="text-[11px] uppercase text-earth mb-2">Fotos da viagem</p>
+            <p className="text-[11px] uppercase text-earth mb-1">Fotos da viagem</p>
+            <p className="text-[10px] text-earth/70 mb-2">
+              Toque em <span className="font-medium">Capa</span> para a tela de compartilhamento.
+              A foto principal de cada lugar continua no marcador do mapa.
+            </p>
             {photos.length === 0 ? (
               <p className="text-sm text-earth/70">Nenhuma foto ainda — adicione nos lugares.</p>
             ) : (
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {photos.map((p, i) => (
-                  <button
-                    key={`${p.markerId}-${i}`}
-                    type="button"
-                    className="shrink-0"
-                    onClick={() => {
-                      onSelectPlace(p.markerId)
-                      onClose()
-                    }}
-                  >
-                    <AnalogPhoto src={p.url} thumb imgClassName="h-16 w-16" className="!rotate-0" />
-                  </button>
-                ))}
+                {photos.map((p, i) => {
+                  const isCover = coverUrl === p.url
+                  return (
+                    <div key={`${p.markerId}-${i}`} className="shrink-0 w-[4.5rem]">
+                      <button
+                        type="button"
+                        className="block w-full"
+                        title={`Abrir ${p.title}`}
+                        onClick={() => {
+                          onSelectPlace(p.markerId)
+                          onClose()
+                        }}
+                      >
+                        <AnalogPhoto src={p.url} thumb imgClassName="h-16 w-16" className="!rotate-0" />
+                      </button>
+                      <div className="mt-1 flex flex-col gap-0.5">
+                        {p.isPrimary && (
+                          <span className="text-[8px] text-stamp text-center leading-tight">principal</span>
+                        )}
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => void setCover(p.url)}
+                          className={`text-[9px] w-full rounded px-1 py-0.5 border ${
+                            isCover
+                              ? 'bg-earth text-cream border-earth'
+                              : 'bg-cream text-earth border-ink/20 hover:bg-sand/50'
+                          }`}
+                        >
+                          {isCover ? 'Capa ✓' : 'Capa'}
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </section>

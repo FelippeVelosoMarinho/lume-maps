@@ -25,6 +25,7 @@ export function JourneyPage({ mode }: { mode: Mode }) {
   const [flyTo, setFlyTo] = useState<{ lat: number; lng: number } | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [headerMore, setHeaderMore] = useState(false)
+  const [joining, setJoining] = useState(false)
 
   const load = useCallback(async () => {
     if (!slug) return
@@ -65,7 +66,17 @@ export function JourneyPage({ mode }: { mode: Mode }) {
     return () => document.removeEventListener('click', onDoc)
   }, [headerMore])
 
-  // Visitante autenticado: ao abrir o mapa, entra automaticamente
+  // Quem tem acesso (dono / companheiro) sempre cai no modo editar
+  useEffect(() => {
+    if (mode !== 'view' || authLoading || !me?.passport || !journey || !slug) return
+    const isOwner = me.passport.username === journey.owner_username
+    const isCompanion = (journey.companions ?? []).some((c) => c.username === me.passport.username)
+    if (isOwner || isCompanion) {
+      navigate(`/v/${slug}/edit`, { replace: true })
+    }
+  }, [mode, authLoading, me, journey, slug, navigate])
+
+  // Visitante autenticado sem acesso: entra no mapa e vai para editar
   useEffect(() => {
     if (mode !== 'view') return
     if (!slug || authLoading || !me?.passport || !journey) return
@@ -73,16 +84,20 @@ export function JourneyPage({ mode }: { mode: Mode }) {
     const already = (journey.companions ?? []).some((c) => c.username === me.passport.username)
     if (already) return
     let cancelled = false
+    setJoining(true)
     void api
       .joinJourney(slug)
       .then((res) => {
         if (cancelled) return
-        if (res.joined) {
-          toast.success('Você entrou neste mapa')
-          setJourney(res.journey)
+        if (res.joined) toast.success('Você entrou neste mapa')
+        navigate(`/v/${slug}/edit`, { replace: true })
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setJoining(false)
+          toast.error('Não foi possível entrar neste mapa')
         }
       })
-      .catch(() => {})
     return () => {
       cancelled = true
     }
@@ -90,10 +105,10 @@ export function JourneyPage({ mode }: { mode: Mode }) {
   }, [mode, slug, authLoading, me?.passport.username, journey?.id, journey?.owner_username, journey?.companions])
 
   if (mode === 'edit' && !authLoading && !me) {
-    return <Navigate to="/auth" replace />
+    return <Navigate to={`/auth?mode=login&next=${encodeURIComponent(`/v/${slug}`)}`} replace />
   }
 
-  // Convidado sem conta: landing de compartilhamento (como o passaporte)
+  // Convidado sem conta: landing de compartilhamento
   if (mode === 'view' && !authLoading && !me) {
     if (error) {
       return (
@@ -110,13 +125,46 @@ export function JourneyPage({ mode }: { mode: Mode }) {
       )
     }
     return (
-      <Shell compact>
+      <Shell>
         <JourneyInviteView journey={journey} />
       </Shell>
     )
   }
 
-  if (mode === 'view' && authLoading) {
+  if (mode === 'view' && (authLoading || joining)) {
+    return (
+      <Shell compact>
+        <p className="text-earth px-4 py-10">
+          {joining ? 'Entrando no mapa…' : 'Abrindo mapa…'}
+        </p>
+      </Shell>
+    )
+  }
+
+  // Logado em /v/:slug — redireciona para edit; se o join falhou, avisa
+  if (mode === 'view' && me && journey && !joining) {
+    const owns = me.passport.username === journey.owner_username
+    const withThem = (journey.companions ?? []).some((c) => c.username === me.passport.username)
+    if (!owns && !withThem) {
+      return (
+        <Shell compact>
+          <div className="px-4 py-10 text-center space-y-3">
+            <p className="text-earth">Não foi possível entrar neste mapa.</p>
+            <Link className="text-stamp hover:underline text-sm" to={`/p/${me.passport.username}`}>
+              Voltar ao meu passaporte
+            </Link>
+          </div>
+        </Shell>
+      )
+    }
+    return (
+      <Shell compact>
+        <p className="text-earth px-4 py-10">Abrindo mapa…</p>
+      </Shell>
+    )
+  }
+
+  if (mode === 'view' && me && !journey && !error) {
     return (
       <Shell compact>
         <p className="text-earth px-4 py-10">Carregando…</p>
@@ -127,8 +175,6 @@ export function JourneyPage({ mode }: { mode: Mode }) {
   const selected: Marker | undefined = journey?.markers.find((m) => m.id === selectedId)
   const period = journey ? formatPeriod(journey.started_on, journey.ended_on) : ''
   const isOwner = !!me && me.passport.username === journey?.owner_username
-  const isCompanion = !!me && (journey?.companions ?? []).some((c) => c.username === me.passport.username)
-  const canEdit = isOwner || isCompanion
   const sheetOpen = !!selected || menuOpen
   const shareUrl = `${window.location.origin}/v/${slug}`
 
@@ -173,12 +219,21 @@ export function JourneyPage({ mode }: { mode: Mode }) {
     setSelectedId(id)
   }
 
+  // Só renderiza o mapa em modo edit (acesso)
+  if (mode !== 'edit' || !journey) {
+    return (
+      <Shell compact>
+        <p className="text-earth px-4 py-10">{error || 'Carregando…'}</p>
+      </Shell>
+    )
+  }
+
   return (
     <div className="h-[100dvh] flex flex-col bg-sand/40 text-ink">
       <header className="shrink-0 bg-paper text-ink border-b border-ink/20 z-20 safe-top">
         <div className="flex items-start justify-between gap-2 px-3 py-2.5">
           <div className="min-w-0 flex items-start gap-2 flex-1">
-            {journey?.color && (
+            {journey.color && (
               <span
                 className="w-2.5 h-2.5 rounded-full shrink-0 mt-1.5"
                 style={{ background: journey.color }}
@@ -187,16 +242,14 @@ export function JourneyPage({ mode }: { mode: Mode }) {
             )}
             <div className="min-w-0">
               <p className="font-display text-sm md:text-base leading-snug line-clamp-2">
-                {journey?.title || '…'}
+                {journey.title}
               </p>
-              {journey && (
-                <JourneyPeopleLine
-                  ownerUsername={journey.owner_username}
-                  ownerDisplayName={journey.owner_display_name}
-                  companions={journey.companions ?? []}
-                  period={period}
-                />
-              )}
+              <JourneyPeopleLine
+                ownerUsername={journey.owner_username}
+                ownerDisplayName={journey.owner_display_name}
+                companions={journey.companions ?? []}
+                period={period}
+              />
             </div>
           </div>
 
@@ -209,33 +262,11 @@ export function JourneyPage({ mode }: { mode: Mode }) {
               <Share2 size={14} />
               Compartilhar
             </button>
-            {mode === 'view' && canEdit && (
-              <Link to={`/v/${slug}/edit`} className="chip">
-                Editar
-              </Link>
-            )}
-            {mode === 'edit' && (
-              <>
-                <JourneyMenuButton onClick={openMenu} />
-                <Link to={`/v/${slug}`} className="chip">
-                  Ver público
-                </Link>
-              </>
-            )}
+            <JourneyMenuButton onClick={openMenu} />
           </div>
 
           <div className="flex sm:hidden items-center gap-1.5 shrink-0 relative" data-header-more>
-            {mode === 'edit' ? (
-              <JourneyMenuButton onClick={openMenu} />
-            ) : canEdit ? (
-              <Link to={`/v/${slug}/edit`} className="chip">
-                Editar
-              </Link>
-            ) : (
-              <button type="button" onClick={() => void deliverMap()} className="chip !px-2.5" aria-label="Compartilhar">
-                <Share2 size={16} />
-              </button>
-            )}
+            <JourneyMenuButton onClick={openMenu} />
             <button
               type="button"
               className="chip !px-2.5"
@@ -257,16 +288,7 @@ export function JourneyPage({ mode }: { mode: Mode }) {
                 >
                   Compartilhar
                 </button>
-                {mode === 'edit' && (
-                  <Link
-                    to={`/v/${slug}`}
-                    className="block px-3 py-2.5 hover:bg-sand/50"
-                    onClick={() => setHeaderMore(false)}
-                  >
-                    Ver público
-                  </Link>
-                )}
-                {journey?.owner_username && (
+                {journey.owner_username && (
                   <Link
                     to={`/p/${journey.owner_username}`}
                     className="block px-3 py-2.5 hover:bg-sand/50"
@@ -284,19 +306,17 @@ export function JourneyPage({ mode }: { mode: Mode }) {
       {error && <div className="bg-red-100 text-red-900 text-sm px-4 py-2">{error}</div>}
 
       <div className="relative flex-1 min-h-0">
-        {journey && (
-          <WarmMap
-            key={`map-${journey.id}-${journey.color || 'default'}`}
-            markers={journey.markers}
-            selectedId={selectedId}
-            onSelect={selectPlace}
-            flyTo={flyTo}
-            pathColor={journey.color || undefined}
-            bottomPad={sheetOpen ? 220 : 48}
-          />
-        )}
+        <WarmMap
+          key={`map-${journey.id}-${journey.color || 'default'}`}
+          markers={journey.markers}
+          selectedId={selectedId}
+          onSelect={selectPlace}
+          flyTo={flyTo}
+          pathColor={journey.color || undefined}
+          bottomPad={sheetOpen ? 220 : 48}
+        />
 
-        {selected && slug && journey && (
+        {selected && slug && (
           <PlaceSheet
             key={
               selected.id +
@@ -305,7 +325,7 @@ export function JourneyPage({ mode }: { mode: Mode }) {
             }
             marker={selected}
             slug={slug}
-            editable={mode === 'edit'}
+            editable
             expeditionLabel={journey.title}
             expeditionDate={journey.started_on || journey.ended_on}
             onClose={() => setSelectedId(null)}
@@ -314,7 +334,7 @@ export function JourneyPage({ mode }: { mode: Mode }) {
           />
         )}
 
-        {mode === 'edit' && slug && journey && (
+        {slug && (
           <>
             <StampDock
               slug={slug}
