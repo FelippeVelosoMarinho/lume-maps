@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
-import { MoreHorizontal } from 'lucide-react'
+import { MoreHorizontal, Share2 } from 'lucide-react'
 import { api, type Journey, type Marker } from '../lib/api'
 import { formatPeriod } from '../lib/dates'
 import { toast } from '../lib/notify'
@@ -9,6 +9,9 @@ import { WarmMap } from '../components/DarkMap'
 import { PlaceSheet } from '../components/PlaceSheet'
 import { StampDock } from '../components/StampDock'
 import { JourneyEditMenu, JourneyMenuButton } from '../components/JourneyEditMenu'
+import { JourneyInviteView } from '../components/JourneyInviteView'
+import { JourneyPeopleLine } from '../components/JourneyPeopleLine'
+import { Shell } from '../components/Shell'
 
 type Mode = 'edit' | 'view'
 
@@ -62,8 +65,9 @@ export function JourneyPage({ mode }: { mode: Mode }) {
     return () => document.removeEventListener('click', onDoc)
   }, [headerMore])
 
-  // Visitante autenticado: ao abrir o mapa, entra automaticamente (aparece no passaporte)
+  // Visitante autenticado: ao abrir o mapa, entra automaticamente
   useEffect(() => {
+    if (mode !== 'view') return
     if (!slug || authLoading || !me?.passport || !journey) return
     if (me.passport.username === journey.owner_username) return
     const already = (journey.companions ?? []).some((c) => c.username === me.passport.username)
@@ -74,22 +78,50 @@ export function JourneyPage({ mode }: { mode: Mode }) {
       .then((res) => {
         if (cancelled) return
         if (res.joined) {
-          toast.success('Mapa adicionado ao seu passaporte')
+          toast.success('Você entrou neste mapa')
           setJourney(res.journey)
         }
       })
-      .catch(() => {
-        /* silencioso — sem conta ou mapa privado */
-      })
+      .catch(() => {})
     return () => {
       cancelled = true
     }
-    // Só reage a identidade do mapa / sessão — evita loop com setJourney
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug, authLoading, me?.passport.username, journey?.id, journey?.owner_username, journey?.companions])
+  }, [mode, slug, authLoading, me?.passport.username, journey?.id, journey?.owner_username, journey?.companions])
 
   if (mode === 'edit' && !authLoading && !me) {
     return <Navigate to="/auth" replace />
+  }
+
+  // Convidado sem conta: landing de compartilhamento (como o passaporte)
+  if (mode === 'view' && !authLoading && !me) {
+    if (error) {
+      return (
+        <Shell compact>
+          <p className="text-red-800 px-4 py-10">{error}</p>
+        </Shell>
+      )
+    }
+    if (!journey) {
+      return (
+        <Shell compact>
+          <p className="text-earth px-4 py-10">Carregando…</p>
+        </Shell>
+      )
+    }
+    return (
+      <Shell compact>
+        <JourneyInviteView journey={journey} />
+      </Shell>
+    )
+  }
+
+  if (mode === 'view' && authLoading) {
+    return (
+      <Shell compact>
+        <p className="text-earth px-4 py-10">Carregando…</p>
+      </Shell>
+    )
   }
 
   const selected: Marker | undefined = journey?.markers.find((m) => m.id === selectedId)
@@ -98,29 +130,31 @@ export function JourneyPage({ mode }: { mode: Mode }) {
   const isCompanion = !!me && (journey?.companions ?? []).some((c) => c.username === me.passport.username)
   const canEdit = isOwner || isCompanion
   const sheetOpen = !!selected || menuOpen
+  const shareUrl = `${window.location.origin}/v/${slug}`
 
   async function deliverMap() {
     if (!me?.passport) {
       toast.error('Para compartilhar, você precisa ter um passaporte registrado.')
-      navigate('/auth')
+      navigate(`/auth?mode=signup&next=${encodeURIComponent(`/v/${slug}`)}`)
       return
     }
-    const url = `${window.location.origin}/v/${slug}`
     try {
       if (navigator.share) {
         await navigator.share({
           title: journey?.title,
-          text: journey?.subtitle || 'Veja o mapa desta viagem',
-          url,
+          text: journey?.owner_username
+            ? `${journey.owner_username} te chama pra essa viagem no Lume Maps`
+            : journey?.subtitle || 'Veja o mapa desta viagem',
+          url: shareUrl,
         })
         return
       }
-      await navigator.clipboard.writeText(url)
+      await navigator.clipboard.writeText(shareUrl)
       toast.success('Link do mapa copiado')
     } catch (e) {
       if (e instanceof Error && e.name === 'AbortError') return
       try {
-        await navigator.clipboard.writeText(url)
+        await navigator.clipboard.writeText(shareUrl)
         toast.success('Link do mapa copiado')
       } catch {
         toast.error('Não foi possível copiar o link')
@@ -142,8 +176,8 @@ export function JourneyPage({ mode }: { mode: Mode }) {
   return (
     <div className="h-[100dvh] flex flex-col bg-sand/40 text-ink">
       <header className="shrink-0 bg-paper text-ink border-b border-ink/20 z-20 safe-top">
-        <div className="flex items-start justify-between gap-2 px-3 py-2">
-          <div className="min-w-0 flex items-center gap-2 flex-1">
+        <div className="flex items-start justify-between gap-2 px-3 py-2.5">
+          <div className="min-w-0 flex items-start gap-2 flex-1">
             {journey?.color && (
               <span
                 className="w-2.5 h-2.5 rounded-full shrink-0 mt-1.5"
@@ -155,20 +189,24 @@ export function JourneyPage({ mode }: { mode: Mode }) {
               <p className="font-display text-sm md:text-base leading-snug line-clamp-2">
                 {journey?.title || '…'}
               </p>
-              <p className="text-[11px] text-earth truncate">
-                {journey?.owner_display_name && (
-                  <Link className="text-stamp hover:underline" to={`/p/${journey.owner_username}`}>
-                    @{journey.owner_username}
-                  </Link>
-                )}
-                {period && <span> · {period}</span>}
-              </p>
+              {journey && (
+                <JourneyPeopleLine
+                  ownerUsername={journey.owner_username}
+                  ownerDisplayName={journey.owner_display_name}
+                  companions={journey.companions ?? []}
+                  period={period}
+                />
+              )}
             </div>
           </div>
 
-          {/* Desktop actions */}
           <div className="hidden sm:flex items-center gap-2 shrink-0">
-            <button type="button" onClick={() => void deliverMap()} className="chip">
+            <button
+              type="button"
+              onClick={() => void deliverMap()}
+              className="chip inline-flex items-center gap-1.5"
+            >
+              <Share2 size={14} />
               Compartilhar
             </button>
             {mode === 'view' && canEdit && (
@@ -186,7 +224,6 @@ export function JourneyPage({ mode }: { mode: Mode }) {
             )}
           </div>
 
-          {/* Mobile: primary + overflow */}
           <div className="flex sm:hidden items-center gap-1.5 shrink-0 relative" data-header-more>
             {mode === 'edit' ? (
               <JourneyMenuButton onClick={openMenu} />
@@ -195,8 +232,8 @@ export function JourneyPage({ mode }: { mode: Mode }) {
                 Editar
               </Link>
             ) : (
-              <button type="button" onClick={() => void deliverMap()} className="chip">
-                Share
+              <button type="button" onClick={() => void deliverMap()} className="chip !px-2.5" aria-label="Compartilhar">
+                <Share2 size={16} />
               </button>
             )}
             <button
@@ -235,7 +272,7 @@ export function JourneyPage({ mode }: { mode: Mode }) {
                     className="block px-3 py-2.5 hover:bg-sand/50"
                     onClick={() => setHeaderMore(false)}
                   >
-                    Passaporte
+                    Passaporte do dono
                   </Link>
                 )}
               </div>

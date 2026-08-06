@@ -1,28 +1,44 @@
 import { useEffect, useState, type FormEvent, type InputHTMLAttributes } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { Shell } from '../components/Shell'
 
 export function AuthPage() {
   const { login, signup, me, loading } = useAuth()
   const nav = useNavigate()
-  const [mode, setMode] = useState<'login' | 'signup'>('signup')
+  const [params] = useSearchParams()
+  const [mode, setMode] = useState<'login' | 'signup'>(() =>
+    params.get('mode') === 'login' ? 'login' : 'signup',
+  )
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    if (!loading && me) nav(`/p/${me.passport.username}`, { replace: true })
-  }, [me, loading, nav])
+    const m = params.get('mode')
+    if (m === 'login' || m === 'signup') setMode(m)
+  }, [params])
+
+  useEffect(() => {
+    if (!loading && me) {
+      const raw = params.get('next')
+      const next =
+        raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : `/p/${me.passport.username}`
+      nav(next, { replace: true })
+    }
+  }, [me, loading, nav, params])
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError('')
     setBusy(true)
     const fd = new FormData(e.currentTarget)
+    const raw = params.get('next')
+    const next =
+      raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : null
     try {
       if (mode === 'login') {
         await login(String(fd.get('email')), String(fd.get('password')))
-        // refresh sets me; effect navigates
+        // effect navega com ?next=
       } else {
         const username = String(fd.get('username')).toLowerCase()
         await signup({
@@ -33,7 +49,7 @@ export function AuthPage() {
           place_of_issue: String(fd.get('place_of_issue') || ''),
           signature: String(fd.get('signature') || ''),
         })
-        nav(`/p/${username}`)
+        nav(next || `/p/${username}`)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha')

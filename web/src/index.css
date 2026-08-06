@@ -84,46 +84,55 @@ body {
 .passport-stars {
   position: absolute;
   background-color: var(--color-ink);
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpolygon fill='black' points='8,1 9.6,5.4 14.2,5.4 10.5,8.2 11.9,12.6 8,9.9 4.1,12.6 5.5,8.2 1.8,5.4 6.4,5.4'/%3E%3C/svg%3E");
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpolygon fill='black' points='8,1 9.6,5.4 14.2,5.4 10.5,8.2 11.9,12.6 8,9.9 4.1,12.6 5.5,8.2 1.8,5.4 6.4,5.4'/%3E%3C/svg%3E");
-  mask-size: 16px 16px;
-  -webkit-mask-size: 16px 16px;
+  /* tile 24×24 com estrela ~10px no centro → gap visível entre estrelas */
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon fill='black' points='12,3.5 13.3,8.2 18.2,8.2 14.3,11.1 15.7,15.8 12,12.9 8.3,15.8 9.7,11.1 5.8,8.2 10.7,8.2'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon fill='black' points='12,3.5 13.3,8.2 18.2,8.2 14.3,11.1 15.7,15.8 12,12.9 8.3,15.8 9.7,11.1 5.8,8.2 10.7,8.2'/%3E%3C/svg%3E");
+  mask-size: 20px 20px;
+  -webkit-mask-size: 20px 20px;
   pointer-events: none;
   z-index: 2;
 }
 
 .passport-stars--top,
 .passport-stars--bottom {
-  left: 14px;
-  right: 14px;
-  height: 12px;
+  left: 16px;
+  right: 16px;
+  height: 11px;
+  mask-size: 20px 11px;
+  -webkit-mask-size: 20px 11px;
   mask-repeat: repeat-x;
   -webkit-mask-repeat: repeat-x;
+  mask-position: center;
+  -webkit-mask-position: center;
 }
 
 .passport-stars--top {
-  top: 4px;
+  top: 5px;
 }
 
 .passport-stars--bottom {
-  bottom: 4px;
+  bottom: 5px;
 }
 
 .passport-stars--left,
 .passport-stars--right {
-  top: 14px;
-  bottom: 14px;
-  width: 12px;
+  top: 16px;
+  bottom: 16px;
+  width: 11px;
+  mask-size: 11px 20px;
+  -webkit-mask-size: 11px 20px;
   mask-repeat: repeat-y;
   -webkit-mask-repeat: repeat-y;
+  mask-position: center;
+  -webkit-mask-position: center;
 }
 
 .passport-stars--left {
-  left: 4px;
+  left: 5px;
 }
 
 .passport-stars--right {
-  right: 4px;
+  right: 5px;
 }
 
 .passport-card__inner {
@@ -140,6 +149,118 @@ body {
   }
   .passport-card__inner {
     padding: 1.1rem 1.25rem 1.25rem;
+  }
+}
+
+/* Ticket: um pouco mais de respiro nas estrelas */
+.passport-card--ticket .passport-stars--top,
+.passport-card--ticket .passport-stars--bottom {
+  left: 14px;
+  right: 14px;
+  mask-size: 22px 10px;
+  -webkit-mask-size: 22px 10px;
+  height: 10px;
+}
+
+.passport-card--ticket .passport-stars--left,
+.passport-card--ticket .passport-stars--right {
+  top: 14px;
+  bottom: 14px;
+  mask-size: 10px 22px;
+  -webkit-mask-size: 10px 22px;
+  width: 10px;
+}
+
+/* Ticket retangular (CMIYGL) — convite */
+.passport-card--ticket {
+  padding: 10px 12px;
+  aspect-ratio: 16 / 10;
+  max-width: 100%;
+  width: 100%;
+}
+
+.passport-card--ticket .passport-card__inner {
+  padding: 0.55rem 0.65rem 0.6rem;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.passport-ticket {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.75rem 0.9rem;
+  align-items: start;
+  height: 100%;
+}
+
+.passport-ticket--ghost {
+  align-items: center;
+}
+
+.passport-ticket__photo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.passport-ticket__body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+.passport-ticket__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.passport-ticket__fields {
+  margin: 0;
+}
+
+.passport-ticket__notes {
+  margin-top: 0.45rem;
+  padding-right: 0.25rem;
+}
+
+.passport-ticket__sign {
+  margin-top: auto;
+  padding-top: 0.55rem;
+}
+
+.passport-ink-stamp--ticket {
+  width: 4.6rem;
+  height: 3.2rem;
+  font-size: 0.52rem;
+  transform: rotate(-12deg);
+  opacity: 0.8;
+  padding: 0.2rem;
+  flex-shrink: 0;
+}
+
+.passport-ink-stamp--ticket .passport-ink-stamp__sub {
+  font-size: 0.42rem;
+  max-width: 3.8rem;
+}
+
+@media (min-width: 640px) {
+  .passport-card--ticket {
+    padding: 12px 14px;
+  }
+  .passport-card--ticket .passport-card__inner {
+    padding: 0.7rem 0.85rem 0.75rem;
+  }
+  .passport-ticket {
+    gap: 0.9rem 1.1rem;
+  }
+  .passport-ink-stamp--ticket {
+    width: 5.4rem;
+    height: 3.7rem;
+    font-size: 0.58rem;
   }
 }
 
@@ -208,6 +329,61 @@ body {
     background: linear-gradient(to top, rgba(26, 21, 16, 0.65), transparent 55%);
     justify-content: flex-end;
     padding-bottom: 0.65rem;
+  }
+}
+
+/* Convite: pilha de passaportes + escala para caber na viewport */
+.passport-invite {
+  background:
+    radial-gradient(ellipse at 12% 20%, rgba(92, 61, 46, 0.07), transparent 42%),
+    radial-gradient(ellipse at 88% 70%, rgba(47, 111, 115, 0.1), transparent 48%);
+}
+
+.passport-stack {
+  padding-bottom: clamp(1rem, 3vh, 2rem);
+}
+
+.passport-stack__top {
+  display: flex;
+  justify-content: center;
+  /* sem filter:drop-shadow — segue o alpha das estrelas e fica manchado */
+}
+
+.passport-stack__top .passport-card {
+  box-shadow:
+    0 1px 2px rgba(26, 21, 16, 0.06),
+    0 6px 18px rgba(26, 21, 16, 0.1);
+}
+
+.passport-stack__scale {
+  width: 100%;
+  transform-origin: top center;
+  transform: scale(0.92);
+  margin-bottom: -6%;
+}
+
+.passport-stack__ghost .passport-card {
+  box-shadow: none;
+}
+
+@media (min-width: 640px) {
+  .passport-stack__scale {
+    transform: scale(0.96);
+    margin-bottom: -3%;
+  }
+}
+
+@media (min-width: 1024px) {
+  .passport-stack__scale {
+    transform: scale(1);
+    margin-bottom: 0;
+  }
+}
+
+@media (max-height: 700px) and (min-width: 1024px) {
+  .passport-stack__scale {
+    transform: scale(0.88);
+    margin-bottom: -8%;
   }
 }
 
