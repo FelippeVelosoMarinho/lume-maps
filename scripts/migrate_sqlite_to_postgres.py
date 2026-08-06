@@ -73,6 +73,13 @@ def migrate(sqlite_path: Path, database_url: str, truncate: bool) -> None:
                     cur.execute(f"TRUNCATE TABLE {quote_ident(table)} CASCADE")
 
             for table in TABLES:
+                exists = src.execute(
+                    "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+                    (table,),
+                ).fetchone()
+                if not exists:
+                    print(f"  {table}: (não existe no SQLite — pulado)")
+                    continue
                 rows = src.execute(f"SELECT * FROM {table}").fetchall()
                 if not rows:
                     print(f"  {table}: 0 linhas")
