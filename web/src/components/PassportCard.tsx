@@ -36,6 +36,11 @@ function sealChromeStyle(colors: string[]): CSSProperties {
 export function StampSeal({ stamp, size = 112 }: { stamp: Stamp; size?: number }) {
   const photo = stamp.primary_photo_url
   const colors = stamp.colors?.length ? stamp.colors : []
+  const repeats = Math.max(
+    1,
+    stamp.journey_titles?.length || colors.length || 1,
+  )
+  const starCount = Math.min(repeats, 5)
   return (
     <div
       className="stamp-seal p-2 relative overflow-hidden"
@@ -48,7 +53,9 @@ export function StampSeal({ stamp, size = 112 }: { stamp: Stamp; size?: number }
       }}
       title={
         stamp.journey_titles?.length
-          ? `${stamp.label} — ${stamp.journey_titles.join(', ')}`
+          ? `${stamp.label} — ${stamp.journey_titles.join(', ')}${
+              repeats > 1 ? ` (${repeats}×)` : ''
+            }`
           : stamp.label
       }
     >
@@ -63,7 +70,13 @@ export function StampSeal({ stamp, size = 112 }: { stamp: Stamp; size?: number }
         />
       )}
       <div className="relative z-[1] flex flex-col items-center justify-center h-full text-center">
-        <div className="text-[9px] opacity-70">★</div>
+        <div
+          className="opacity-70 tracking-[0.05em] leading-none"
+          style={{ fontSize: starCount > 3 ? 7 : 9 }}
+          aria-hidden
+        >
+          {'★'.repeat(starCount)}
+        </div>
         <div className="leading-tight px-1 font-semibold">{stamp.label}</div>
         <div className="text-[9px] mt-1 font-mono opacity-80">{stampDateLabel(stamp)}</div>
         {stamp.journey_titles && stamp.journey_titles.length > 1 ? (

@@ -116,6 +116,30 @@ export function PassportPage() {
     }
   }
 
+  async function shareMap(slug: string, title: string) {
+    const url = `${window.location.origin}/v/${slug}`
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title,
+          text: `Veja o mapa “${title}” no Lume Maps`,
+          url,
+        })
+        return
+      }
+      await navigator.clipboard.writeText(url)
+      toast.success('Link do mapa copiado')
+    } catch (e) {
+      if (e instanceof Error && e.name === 'AbortError') return
+      try {
+        await navigator.clipboard.writeText(url)
+        toast.success('Link do mapa copiado')
+      } catch {
+        toast.error('Não foi possível copiar o link')
+      }
+    }
+  }
+
   if (authLoading && passport) {
     return (
       <Shell compact>
@@ -273,7 +297,7 @@ export function PassportPage() {
                 {passport.journeys.map((j) => (
                   <div key={j.id} className="doc-frame bg-cream p-4 relative group min-w-0">
                     <Link to={`/v/${j.slug}`} className="block hover:opacity-90 min-w-0">
-                      <p className="font-display flex items-center gap-2 pr-8 min-w-0">
+                      <p className="font-display flex items-center gap-2 pr-16 min-w-0">
                         <span
                           className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
                           style={{ background: j.color || 'var(--color-stamp)' }}
@@ -292,21 +316,36 @@ export function PassportPage() {
                         {j.is_mine === false ? 'Abrir mapa →' : 'Abrir / editar →'}
                       </span>
                     </Link>
-                    {j.is_mine !== false && (
+                    <div className="absolute top-2.5 right-2.5 flex items-center gap-0.5">
                       <button
                         type="button"
-                        title="Apagar mapa"
-                        aria-label={`Apagar ${j.title}`}
-                        className="absolute top-3 right-3 p-2.5 min-w-10 min-h-10 inline-flex items-center justify-center rounded-full text-earth/50 hover:text-red-900 hover:bg-red-50"
+                        title="Compartilhar mapa"
+                        aria-label={`Compartilhar ${j.title}`}
+                        className="p-2.5 min-w-10 min-h-10 inline-flex items-center justify-center rounded-full text-earth/50 hover:text-stamp hover:bg-sand/60"
                         onClick={(e) => {
                           e.preventDefault()
                           e.stopPropagation()
-                          void deleteMap(j.slug, j.title)
+                          void shareMap(j.slug, j.title)
                         }}
                       >
-                        <Trash2 size={16} />
+                        <Share2 size={16} />
                       </button>
-                    )}
+                      {j.is_mine !== false && (
+                        <button
+                          type="button"
+                          title="Apagar mapa"
+                          aria-label={`Apagar ${j.title}`}
+                          className="p-2.5 min-w-10 min-h-10 inline-flex items-center justify-center rounded-full text-earth/50 hover:text-red-900 hover:bg-red-50"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            void deleteMap(j.slug, j.title)
+                          }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
                 {passport.journeys.length === 0 && (
