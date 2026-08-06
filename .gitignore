@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+web/node_modules/
+api/.venv/
+**/__pycache__/
+*.py[cod]
+.Python
+
+# Local env / secrets
+.env
+.env.local
+*.pem
+
+# Local databases & uploads (use scripts para migrar)
+api/mapa_retrato.db
+api/mapa_retrato.db-*
+api/uploads/*
+!api/uploads/.gitkeep
+
+# Build
+web/dist/
+*.log
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+.cursor/

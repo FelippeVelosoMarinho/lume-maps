@@ -1,0 +1,8 @@
+__pycache__
+*.pyc
+.venv
+mapa_retrato.db
+mapa_retrato.db-*
+uploads/*
+!uploads/.gitkeep
+.env

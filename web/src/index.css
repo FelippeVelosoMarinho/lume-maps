@@ -1,0 +1,440 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+@theme {
+  --color-paper: #F3E8D4;
+  --color-paper-aged: #E8D9C0;
+  --color-ink: #1A1510;
+  --color-sky: #7EB6D9;
+  --color-stamp: #2F6F73;
+  --color-stamp-ink: #3A8A8E;
+  --color-earth: #5C3D2E;
+  --color-sand: #D4B896;
+  --color-cream: #F7F1E6;
+  --color-map-chrome: #0B1220;
+  --font-display: "Libre Baskerville", serif;
+  --font-script: "Caveat", cursive;
+  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
+
+html, body, #root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  background-image:
+    radial-gradient(ellipse at 15% 0%, rgba(92, 61, 46, 0.08), transparent 45%),
+    radial-gradient(ellipse at 85% 100%, rgba(47, 111, 115, 0.1), transparent 50%);
+}
+
+.lume-toast {
+  font-family: var(--font-sans) !important;
+  background: var(--color-cream) !important;
+  color: var(--color-ink) !important;
+  border: 1px solid color-mix(in srgb, var(--color-ink) 25%, transparent) !important;
+  box-shadow: 0 8px 24px rgba(26, 21, 16, 0.12) !important;
+  font-size: 0.875rem !important;
+}
+
+.paper-grain {
+  position: relative;
+}
+.paper-grain::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+  border-radius: inherit;
+}
+
+/* Documento: borda dupla fina */
+.doc-frame {
+  border: 1px solid var(--color-ink);
+  box-shadow: inset 0 0 0 3px var(--color-paper), inset 0 0 0 4px var(--color-ink);
+  background: var(--color-paper);
+}
+
+.doc-field {
+  border-bottom: 1px dashed var(--color-ink);
+  padding-bottom: 0.25rem;
+}
+
+/* Cartão de licença: estrela em todo o perímetro */
+.passport-card {
+  background: var(--color-paper);
+  border: 1px solid var(--color-ink);
+  padding: 18px 16px;
+}
+
+.passport-stars {
+  position: absolute;
+  background-color: var(--color-ink);
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpolygon fill='black' points='8,1 9.6,5.4 14.2,5.4 10.5,8.2 11.9,12.6 8,9.9 4.1,12.6 5.5,8.2 1.8,5.4 6.4,5.4'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpolygon fill='black' points='8,1 9.6,5.4 14.2,5.4 10.5,8.2 11.9,12.6 8,9.9 4.1,12.6 5.5,8.2 1.8,5.4 6.4,5.4'/%3E%3C/svg%3E");
+  mask-size: 16px 16px;
+  -webkit-mask-size: 16px 16px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.passport-stars--top,
+.passport-stars--bottom {
+  left: 14px;
+  right: 14px;
+  height: 12px;
+  mask-repeat: repeat-x;
+  -webkit-mask-repeat: repeat-x;
+}
+
+.passport-stars--top {
+  top: 4px;
+}
+
+.passport-stars--bottom {
+  bottom: 4px;
+}
+
+.passport-stars--left,
+.passport-stars--right {
+  top: 14px;
+  bottom: 14px;
+  width: 12px;
+  mask-repeat: repeat-y;
+  -webkit-mask-repeat: repeat-y;
+}
+
+.passport-stars--left {
+  left: 4px;
+}
+
+.passport-stars--right {
+  right: 4px;
+}
+
+.passport-card__inner {
+  position: relative;
+  z-index: 1;
+  padding: 0.35rem 0.5rem 0.5rem;
+  border: 1px solid var(--color-ink);
+  background: color-mix(in srgb, var(--color-paper) 94%, white);
+}
+
+@media (min-width: 768px) {
+  .passport-card {
+    padding: 20px 18px;
+  }
+  .passport-card__inner {
+    padding: 1.1rem 1.25rem 1.25rem;
+  }
+}
+
+.passport-ink-stamp {
+  width: 7.25rem;
+  height: 5rem;
+  border: 2.5px solid var(--color-stamp);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  color: var(--color-stamp);
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.7rem;
+  line-height: 1.15;
+  text-align: center;
+  transform: rotate(-14deg);
+  opacity: 0.75;
+  background: rgba(47, 111, 115, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(47, 111, 115, 0.35);
+  padding: 0.35rem;
+}
+
+.passport-ink-stamp__sub {
+  font-size: 0.52rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  opacity: 0.9;
+  max-width: 5.2rem;
+}
+
+.star-border {
+  height: 10px;
+  background-color: var(--color-ink);
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='10' viewBox='0 0 18 10'%3E%3Cpolygon fill='black' points='9,0 11,3.5 15,3.5 12,6 13,10 9,7.5 5,10 6,6 3,3.5 7,3.5'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='10' viewBox='0 0 18 10'%3E%3Cpolygon fill='black' points='9,0 11,3.5 15,3.5 12,6 13,10 9,7.5 5,10 6,6 3,3.5 7,3.5'/%3E%3C/svg%3E");
+  mask-size: 18px 10px;
+  -webkit-mask-size: 18px 10px;
+  mask-repeat: repeat-x;
+  -webkit-mask-repeat: repeat-x;
+}
+
+.brand-star {
+  display: inline-block;
+  line-height: 1;
+  color: var(--color-stamp);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid color-mix(in srgb, var(--color-ink) 35%, transparent);
+  background: var(--color-cream);
+  color: var(--color-ink);
+  border-radius: 9999px;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: background 0.15s ease;
+}
+.chip:hover {
+  background: var(--color-sand);
+}
+
+.stamp-seal {
+  border: 2.5px solid var(--color-stamp);
+  color: var(--color-stamp);
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  opacity: 0.9;
+  box-shadow: inset 0 0 0 1px rgba(47, 111, 115, 0.4);
+  background: rgba(47, 111, 115, 0.07);
+}
+
+/* Foto analógica impressa */
+.analog-print {
+  position: relative;
+  background: #f5f0e6;
+  padding: 0.55rem 0.55rem 1.6rem;
+  box-shadow:
+    0 1px 2px rgba(26, 21, 16, 0.12),
+    0 8px 20px rgba(26, 21, 16, 0.18);
+  transform: rotate(-1.5deg);
+}
+.analog-print.is-thumb {
+  padding: 0.3rem 0.3rem 0.85rem;
+  transform: rotate(1deg);
+}
+.analog-print__frame {
+  position: relative;
+  overflow: hidden;
+  background: #1a1510;
+}
+.analog-print__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter:
+    sepia(0.22)
+    saturate(0.85)
+    contrast(0.92)
+    brightness(1.05)
+    hue-rotate(-6deg);
+}
+.analog-print__grain {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0.22;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+.analog-print__glow {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 30% 20%, rgba(255, 240, 200, 0.28), transparent 55%);
+  mix-blend-mode: soft-light;
+}
+.analog-print__caption {
+  margin-top: 0.35rem;
+  font-family: var(--font-script);
+  font-size: 0.95rem;
+  color: var(--color-earth);
+  line-height: 1.1;
+  padding: 0 0.15rem;
+}
+.analog-print__stamp {
+  position: absolute;
+  right: 0.15rem;
+  bottom: 0.35rem;
+  width: 3.4rem;
+  height: 3.4rem;
+  font-size: 6px;
+  line-height: 1.15;
+  transform: rotate(-14deg);
+  pointer-events: none;
+  z-index: 2;
+}
+.analog-print.is-thumb .analog-print__stamp {
+  width: 2.2rem;
+  height: 2.2rem;
+  font-size: 5px;
+  bottom: 0.15rem;
+}
+
+.analog-print.is-clickable {
+  cursor: zoom-in;
+}
+.analog-print.is-clickable:hover {
+  filter: brightness(1.03);
+}
+
+.analog-lightbox-slide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.analog-print--lightbox {
+  transform: rotate(-0.8deg);
+  max-width: min(92vw, 720px);
+  width: 100%;
+  padding: 0.75rem 0.75rem 2rem;
+}
+
+.analog-print__frame--lightbox {
+  aspect-ratio: 4 / 3;
+  max-height: min(70vh, 560px);
+}
+
+.analog-print__frame--lightbox .analog-print__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.analog-print__stamp--lightbox {
+  width: 5rem;
+  height: 5rem;
+  font-size: 9px;
+  right: 0.5rem;
+  bottom: 0.6rem;
+}
+
+.photo-thumb-wrap {
+  position: relative;
+}
+.photo-thumb-wrap .photo-remove {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.35rem;
+  z-index: 2;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  background: var(--color-ink);
+  color: var(--color-cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-cream);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+.leaflet-container {
+  background: #e8dcc8;
+  font-family: var(--font-sans);
+  z-index: 0;
+}
+
+.warm-map.leaflet-container {
+  background: #e8dcc8;
+}
+
+/* Overlays acima dos panes do Leaflet (~200–700) e controls (~1000) */
+.map-ui-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1200;
+  pointer-events: none;
+}
+
+.stamp-marker-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.stamp-marker-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  border: 2px solid #2F6F73;
+  background: #F7F1E6;
+  color: #2F6F73;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(26, 21, 16, 0.25);
+  font-family: "Libre Baskerville", serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+}
+
+.stamp-marker-icon.has-photo {
+  width: 36px;
+  height: 36px;
+  border-width: 2.5px;
+  color: transparent;
+  background-color: #C4B59A;
+}
+
+.stamp-marker-icon.active {
+  background-color: #2F6F73;
+  color: #F7F1E6;
+  border-color: #5C3D2E;
+  width: 32px;
+  height: 32px;
+}
+
+.stamp-marker-icon.has-photo.active {
+  width: 40px;
+  height: 40px;
+  border-color: #C45C26;
+  box-shadow: 0 0 0 2px #F7F1E6, 0 2px 8px rgba(26, 21, 16, 0.35);
+}
+
+.stamp-marker-label {
+  background: #F3E8D4;
+  color: #1A1510;
+  font-size: 10px;
+  line-height: 1.2;
+  padding: 2px 7px;
+  border-radius: 4px;
+  max-width: 110px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid rgba(26, 21, 16, 0.2);
+  box-shadow: 0 1px 3px rgba(26, 21, 16, 0.12);
+}
