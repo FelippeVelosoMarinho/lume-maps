@@ -138,6 +138,8 @@ class MarkerCreate(BaseModel):
     color: str = "stamp"
     sort_order: int = 0
     stamp: bool = True
+    # Partida: entra no caminho sem contar como visita (sem carimbo)
+    is_departure: bool = False
 
 
 class MarkerUpdate(BaseModel):
@@ -150,6 +152,7 @@ class MarkerUpdate(BaseModel):
     lat: float | None = None
     lng: float | None = None
     sort_order: int | None = None
+    is_departure: bool | None = None
 
 
 class MarkerReorder(BaseModel):
@@ -169,6 +172,8 @@ class MarkerOut(BaseModel):
     icon: str
     color: str
     sort_order: int
+    is_departure: bool = False
+    has_stamp: bool = False
     primary_photo_url: str | None = None
     annotations: list[AnnotationOut] = []
     attachments: list[AttachmentOut] = []
@@ -240,6 +245,7 @@ class TravelMarkerOut(BaseModel):
     lng: float
     title: str
     sort_order: int
+    is_departure: bool = False
     primary_photo_url: str | None = None
 
 

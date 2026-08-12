@@ -56,7 +56,7 @@ export function notifyRequestSuccess(method: string, path: string) {
   toast.success(successMessage(method, path))
 }
 
-export function notifyRequestError(method: string, path: string, detail: string) {
+export function notifyRequestError(_method: string, path: string, detail: string) {
   if (isSilentError(path)) return
   const msg = detail?.trim() || 'Erro na requisição'
   toast.error(msg)

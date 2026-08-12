@@ -39,6 +39,7 @@ async def create_tables():
             "ALTER TABLE annotations ADD COLUMN author_username VARCHAR(50) DEFAULT ''",
             "ALTER TABLE attachments ADD COLUMN is_primary BOOLEAN DEFAULT 0",
             "ALTER TABLE journeys ADD COLUMN map_color VARCHAR(20)",
+            "ALTER TABLE markers ADD COLUMN is_departure BOOLEAN DEFAULT 0",
         ):
             try:
                 await conn.execute(text(stmt))

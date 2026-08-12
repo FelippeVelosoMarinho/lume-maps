@@ -7,6 +7,7 @@ import { AuthPage } from './pages/AuthPage'
 import { PassportPage } from './pages/PassportPage'
 import { NewJourneyPage } from './pages/NewJourneyPage'
 import { JourneyPage } from './pages/JourneyPage'
+import { SharedTravelsPage } from './pages/SharedTravelsPage'
 import './index.css'
 
 const qc = new QueryClient()
@@ -21,6 +22,7 @@ export default function App() {
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/p/:username" element={<PassportPage />} />
             <Route path="/nova-viagem" element={<NewJourneyPage />} />
+            <Route path="/trajetos" element={<SharedTravelsPage />} />
             <Route path="/v/:slug" element={<JourneyPage mode="view" />} />
             <Route path="/v/:slug/edit" element={<JourneyPage mode="edit" />} />
           </Routes>

@@ -86,6 +86,8 @@ export type Marker = {
   icon: string
   color: string
   sort_order: number
+  is_departure?: boolean
+  has_stamp?: boolean
   primary_photo_url?: string | null
   annotations: Annotation[]
   attachments: Attachment[]
@@ -97,6 +99,7 @@ export type TravelMarker = {
   lng: number
   title: string
   sort_order: number
+  is_departure?: boolean
   primary_photo_url?: string | null
 }
 
@@ -344,7 +347,17 @@ class ApiClient {
     })
   }
 
-  createMarker(slug: string, data: Partial<Marker> & { lat: number; lng: number; title: string; city?: string; stamp?: boolean }) {
+  createMarker(
+    slug: string,
+    data: Partial<Marker> & {
+      lat: number
+      lng: number
+      title: string
+      city?: string
+      stamp?: boolean
+      is_departure?: boolean
+    },
+  ) {
     return this.request<Marker>(`/journeys/${slug}/markers`, {
       method: 'POST',
       body: JSON.stringify(data),

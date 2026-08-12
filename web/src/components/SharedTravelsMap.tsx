@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Polyline, useMap, Tooltip, ZoomControl } from 'react-leaflet'
 import L from 'leaflet'
-import { Link } from 'react-router-dom'
 import { Maximize2, Minimize2 } from 'lucide-react'
 import type { TravelJourney } from '../lib/api'
-import { formatPeriod } from '../lib/dates'
 
 function escapeHtml(s: string) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;')
@@ -20,7 +18,6 @@ function pickRandom<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)]
 }
 
-/** Marcador do mapa do perfil: foto limpa (sem tinta da viagem) ou bolinha colorida. */
 function journeyNodeIcon(title: string, color: string | null, photoUrl?: string | null) {
   const safe = escapeHtml(title).slice(0, 28)
   const hasPhoto = !!photoUrl
@@ -39,13 +36,22 @@ function journeyNodeIcon(title: string, color: string | null, photoUrl?: string 
   })
 }
 
-function FitAll({ journeys }: { journeys: TravelJourney[] }) {
+export type TravelerLayer = {
+  username: string
+  display_name: string
+  color: string
+  journeys: TravelJourney[]
+}
+
+function FitAll({ layers }: { layers: TravelerLayer[] }) {
   const map = useMap()
   useEffect(() => {
-    const pts = journeys.flatMap((j) => j.markers.map((m) => [m.lat, m.lng] as [number, number]))
+    const pts = layers.flatMap((t) =>
+      t.journeys.flatMap((j) => j.markers.map((m) => [m.lat, m.lng] as [number, number])),
+    )
     if (!pts.length) return
     map.fitBounds(L.latLngBounds(pts), { padding: [48, 48], maxZoom: 11 })
-  }, [journeys, map])
+  }, [layers, map])
   return null
 }
 
@@ -67,29 +73,35 @@ type CityPin = {
   lng: number
   photoUrl: string | null
   color: string | null
-  journeyTitles: string[]
+  travelerNames: string[]
 }
 
 type Props = {
-  journeys: TravelJourney[]
+  layers: TravelerLayer[]
   className?: string
+  /** Abre já expandido (útil na página dedicada) */
+  defaultExpanded?: boolean
 }
 
-export function PassportTravelsMap({ journeys, className }: Props) {
-  const [expanded, setExpanded] = useState(false)
+export function SharedTravelsMap({ layers, className, defaultExpanded = false }: Props) {
+  const [expanded, setExpanded] = useState(defaultExpanded)
 
   const withPath = useMemo(
     () =>
-      journeys
-        .map((j) => ({
-          ...j,
-          markers: [...j.markers].sort((a, b) => a.sort_order - b.sort_order),
+      layers
+        .map((t) => ({
+          ...t,
+          journeys: t.journeys
+            .map((j) => ({
+              ...j,
+              markers: [...j.markers].sort((a, b) => a.sort_order - b.sort_order),
+            }))
+            .filter((j) => j.markers.length > 0),
         }))
-        .filter((j) => j.markers.length > 0),
-    [journeys],
+        .filter((t) => t.journeys.length > 0),
+    [layers],
   )
 
-  /** Um pin por cidade: se houver foto(s), escolhe uma ao acaso e não empilha a cor por cima. */
   const cityPins = useMemo(() => {
     type Acc = {
       title: string
@@ -97,33 +109,36 @@ export function PassportTravelsMap({ journeys, className }: Props) {
       lng: number
       photos: string[]
       colors: string[]
-      journeyTitles: string[]
+      travelerNames: string[]
     }
     const byCity = new Map<string, Acc>()
 
-    for (const j of withPath) {
-      for (const m of j.markers) {
-        const key = cityKey(m.title, m.lat, m.lng)
-        let acc = byCity.get(key)
-        if (!acc) {
-          acc = {
-            title: m.title,
-            lat: m.lat,
-            lng: m.lng,
-            photos: [],
-            colors: [],
-            journeyTitles: [],
+    for (const t of withPath) {
+      for (const j of t.journeys) {
+        for (const m of j.markers) {
+          const key = cityKey(m.title, m.lat, m.lng)
+          let acc = byCity.get(key)
+          if (!acc) {
+            acc = {
+              title: m.title,
+              lat: m.lat,
+              lng: m.lng,
+              photos: [],
+              colors: [],
+              travelerNames: [],
+            }
+            byCity.set(key, acc)
           }
-          byCity.set(key, acc)
-        }
-        if (m.primary_photo_url && !acc.photos.includes(m.primary_photo_url)) {
-          acc.photos.push(m.primary_photo_url)
-        }
-        if (j.color && !acc.colors.includes(j.color)) {
-          acc.colors.push(j.color)
-        }
-        if (j.title && !acc.journeyTitles.includes(j.title)) {
-          acc.journeyTitles.push(j.title)
+          if (m.primary_photo_url && !acc.photos.includes(m.primary_photo_url)) {
+            acc.photos.push(m.primary_photo_url)
+          }
+          if (t.color && !acc.colors.includes(t.color)) {
+            acc.colors.push(t.color)
+          }
+          const name = t.display_name || t.username
+          if (name && !acc.travelerNames.includes(name)) {
+            acc.travelerNames.push(name)
+          }
         }
       }
     }
@@ -138,7 +153,7 @@ export function PassportTravelsMap({ journeys, className }: Props) {
         lng: acc.lng,
         photoUrl: hasPhoto ? pickRandom(acc.photos) : null,
         color: hasPhoto ? null : pickRandom(acc.colors),
-        journeyTitles: acc.journeyTitles,
+        travelerNames: acc.travelerNames,
       })
     }
     return pins
@@ -161,12 +176,13 @@ export function PassportTravelsMap({ journeys, className }: Props) {
   if (!withPath.length) {
     return (
       <p className="text-sm text-earth py-6 text-center">
-        Ainda não há trajetos para mostrar no mapa.
+        Ainda não há trajetos públicos para mostrar. Adicione viajantes com mapas.
       </p>
     )
   }
 
-  const center: [number, number] = [withPath[0].markers[0].lat, withPath[0].markers[0].lng]
+  const first = withPath[0].journeys[0].markers[0]
+  const center: [number, number] = [first.lat, first.lng]
 
   const mapFrame = (
     <div
@@ -180,7 +196,7 @@ export function PassportTravelsMap({ journeys, className }: Props) {
         className={
           expanded
             ? 'relative flex-1 min-h-0 rounded-sm overflow-hidden border border-ink/20 bg-paper shadow-lg'
-            : 'relative h-[min(52dvh,360px)] sm:h-[360px] md:h-[440px] rounded-sm overflow-hidden border border-ink/20'
+            : 'relative h-[min(62dvh,480px)] sm:h-[480px] md:h-[560px] rounded-sm overflow-hidden border border-ink/20'
         }
       >
         <button
@@ -206,26 +222,28 @@ export function PassportTravelsMap({ journeys, className }: Props) {
             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           />
           <ZoomControl position="bottomright" />
-          <FitAll journeys={withPath} />
+          <FitAll layers={withPath} />
           <MapResize expanded={expanded} />
-          {withPath.map((j) => {
-            const path = j.markers.map((m) => [m.lat, m.lng] as [number, number])
-            if (path.length < 2) return null
-            return (
-              <Polyline
-                key={`path-${j.id}`}
-                positions={path}
-                pathOptions={{
-                  color: j.color,
-                  weight: 3,
-                  opacity: 0.88,
-                  dashArray: '6, 8',
-                  lineCap: 'round',
-                  lineJoin: 'round',
-                }}
-              />
-            )
-          })}
+          {withPath.map((t) =>
+            t.journeys.map((j) => {
+              const path = j.markers.map((m) => [m.lat, m.lng] as [number, number])
+              if (path.length < 2) return null
+              return (
+                <Polyline
+                  key={`path-${t.username}-${j.id}`}
+                  positions={path}
+                  pathOptions={{
+                    color: t.color,
+                    weight: 3,
+                    opacity: 0.88,
+                    dashArray: '6, 8',
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                  }}
+                />
+              )
+            }),
+          )}
           {cityPins.map((pin) => (
             <Marker
               key={pin.key}
@@ -234,10 +252,10 @@ export function PassportTravelsMap({ journeys, className }: Props) {
             >
               <Tooltip>
                 <span className="font-medium">{pin.title}</span>
-                {pin.journeyTitles.map((t) => (
-                  <span key={t}>
+                {pin.travelerNames.map((name) => (
+                  <span key={name}>
                     <br />
-                    <span className="text-xs opacity-80">{t}</span>
+                    <span className="text-xs opacity-80">{name}</span>
                   </span>
                 ))}
               </Tooltip>
@@ -251,28 +269,22 @@ export function PassportTravelsMap({ journeys, className }: Props) {
   return (
     <div className={className ?? 'space-y-3'}>
       {mapFrame}
-      {/* Placeholder de altura quando expandido, para não colapsar o layout por baixo */}
       {expanded && (
         <div
-          className="h-[min(52dvh,360px)] sm:h-[360px] md:h-[440px] rounded-sm border border-dashed border-ink/15 bg-sand/20"
+          className="h-[min(62dvh,480px)] sm:h-[480px] md:h-[560px] rounded-sm border border-dashed border-ink/15 bg-sand/20"
           aria-hidden
         />
       )}
 
       <ul className="flex flex-wrap gap-x-4 gap-y-2 text-xs">
-        {withPath.map((j) => (
-          <li key={j.id} className="flex items-center gap-2">
+        {layers.map((t) => (
+          <li key={t.username} className="flex items-center gap-2">
             <span
               className="inline-block w-3.5 h-1 rounded-full shrink-0"
-              style={{ background: j.color }}
+              style={{ background: t.color }}
               aria-hidden
             />
-            <Link to={`/v/${j.slug}`} className="hover:underline text-ink font-medium">
-              {j.title}
-            </Link>
-            {formatPeriod(j.started_on, j.ended_on) && (
-              <span className="text-earth font-mono">{formatPeriod(j.started_on, j.ended_on)}</span>
-            )}
+            <span className="text-ink font-medium">{t.display_name || t.username}</span>
           </li>
         ))}
       </ul>

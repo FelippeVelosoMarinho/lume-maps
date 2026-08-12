@@ -1,7 +1,7 @@
 import random
 import re
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from collections import defaultdict
 
@@ -53,13 +53,22 @@ JOURNEY_COLORS = [
 ]
 
 
+def _naive_utc(dt: datetime | None) -> datetime:
+    """Normaliza para naive UTC — SQLite devolve naive; defaults Python podem ser aware."""
+    if dt is None:
+        return datetime.min
+    if dt.tzinfo is not None:
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
+
+
 def journey_color_for_index(index: int) -> str:
     return JOURNEY_COLORS[index % len(JOURNEY_COLORS)]
 
 
 def build_journey_color_map(journeys: list[Journey]) -> dict[str, str]:
     """Cores: map_color persistida tem prioridade; senão ordem de criação."""
-    ordered = sorted(journeys, key=lambda j: (j.created_at or datetime.min, j.id))
+    ordered = sorted(journeys, key=lambda j: (_naive_utc(j.created_at), j.id))
     out: dict[str, str] = {}
     for i, j in enumerate(ordered):
         out[j.id] = (j.map_color or "").strip() or journey_color_for_index(i)
@@ -77,6 +86,8 @@ def _primary_photo_url(marker: Marker) -> str | None:
 def _marker_out(marker: Marker) -> MarkerOut:
     data = MarkerOut.model_validate(marker)
     data.primary_photo_url = _primary_photo_url(marker)
+    data.has_stamp = marker.stamp is not None
+    data.is_departure = bool(getattr(marker, "is_departure", False))
     return data
 
 
@@ -317,15 +328,16 @@ async def create_marker(
     if not city_label:
         raise HTTPException(status_code=400, detail="Informe a cidade do carimbo")
     city_key = (data.city or city_label).strip().casefold()
+    is_departure = bool(data.is_departure)
 
-    # Um carimbo por cidade neste mapa
-    for existing in journey.markers:
-        existing_key = (existing.city or existing.title or "").strip().casefold()
-        if existing_key and existing_key == city_key:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Já existe um carimbo para {existing.title}. Só é permitido um por cidade.",
-            )
+    # Partida / retorno: entram no caminho. Carimbo só na primeira visita real.
+    want_stamp = bool(data.stamp) and not is_departure
+    if want_stamp and user.passport:
+        for existing in journey.markers:
+            existing_key = (existing.city or existing.title or "").strip().casefold()
+            if existing_key == city_key and existing.stamp is not None:
+                want_stamp = False
+                break
 
     marker = Marker(
         journey_id=journey.id,
@@ -338,11 +350,12 @@ async def create_marker(
         icon=data.icon,
         color=data.color,
         sort_order=data.sort_order if data.sort_order is not None else len(journey.markers),
+        is_departure=is_departure,
     )
     db.add(marker)
     await db.flush()
 
-    if data.stamp and user.passport:
+    if want_stamp and user.passport:
         from datetime import time, timezone
 
         stamped_at = None
@@ -365,7 +378,11 @@ async def create_marker(
     result = await db.execute(
         select(Marker)
         .where(Marker.id == marker.id)
-        .options(selectinload(Marker.annotations), selectinload(Marker.attachments))
+        .options(
+            selectinload(Marker.annotations),
+            selectinload(Marker.attachments),
+            selectinload(Marker.stamp),
+        )
     )
     return _marker_out(result.scalar_one())
 
@@ -766,7 +783,7 @@ async def get_passport(username: str, db: AsyncSession = Depends(get_db)):
 
     stamp_outs: list[StampOut] = []
     for stamps in by_city.values():
-        stamps_sorted = sorted(stamps, key=lambda s: s.stamped_at or datetime.min)
+        stamps_sorted = sorted(stamps, key=lambda s: _naive_utc(s.stamped_at))
         primary = stamps_sorted[0]
         colors: list[str] = []
         titles: list[str] = []
@@ -808,7 +825,7 @@ async def get_passport(username: str, db: AsyncSession = Depends(get_db)):
         )
         stamp_outs.append(so)
 
-    stamp_outs.sort(key=lambda s: s.stamped_at or datetime.min)
+    stamp_outs.sort(key=lambda s: _naive_utc(s.stamped_at))
 
     pout = PassportOut.model_validate(passport)
     pout.stamps = stamp_outs
@@ -885,6 +902,7 @@ async def get_passport_travels(username: str, db: AsyncSession = Depends(get_db)
                         lng=m.lng,
                         title=m.title,
                         sort_order=m.sort_order,
+                        is_departure=bool(getattr(m, "is_departure", False)),
                         primary_photo_url=_primary_photo_url(m),
                     )
                     for m in ordered

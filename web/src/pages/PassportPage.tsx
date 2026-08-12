@@ -191,6 +191,12 @@ export function PassportPage() {
                 >
                   Criar mapa
                 </Link>
+                <Link
+                  to="/trajetos"
+                  className="inline-flex items-center justify-center rounded-xl border border-ink/25 bg-cream text-ink px-5 py-2.5 text-sm font-medium hover:bg-sand/40 min-h-11"
+                >
+                  Mapa compartilhado
+                </Link>
               </div>
             </div>
 

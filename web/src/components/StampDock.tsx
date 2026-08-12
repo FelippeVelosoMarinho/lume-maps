@@ -21,6 +21,8 @@ type Hit = {
   address?: NominatimAddress
 }
 
+type AddMode = 'visit' | 'departure' | 'return'
+
 /** Extrai o nome da cidade a partir do resultado do Nominatim. */
 export function cityFromHit(hit: Hit): string | null {
   const a = hit.address
@@ -43,6 +45,18 @@ function sortMarkers(list: Marker[]) {
   return [...list].sort((a, b) => a.sort_order - b.sort_order)
 }
 
+function markerRoleLabel(m: Marker, ordered: Marker[]): string | null {
+  if (m.is_departure) return 'partida'
+  const key = (m.city || m.title || '').trim().toLowerCase()
+  if (!key) return null
+  const earlier = ordered.some(
+    (x) => x.id !== m.id && x.sort_order < m.sort_order && (x.city || x.title || '').trim().toLowerCase() === key,
+  )
+  if (earlier) return 'retorno'
+  if (m.has_stamp === false) return 'caminho'
+  return null
+}
+
 type Props = {
   slug: string
   markers: Marker[]
@@ -61,6 +75,7 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
   }, [hidden])
   const [q, setQ] = useState('')
   const [hits, setHits] = useState<Hit[]>([])
+  const [pendingHit, setPendingHit] = useState<Hit | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [ordered, setOrdered] = useState<Marker[]>(() => sortMarkers(markers))
@@ -75,7 +90,7 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
     orderedRef.current = ordered
   }, [ordered])
 
-  const stampedCities = useMemo(() => {
+  const citiesOnPath = useMemo(() => {
     const set = new Set<string>()
     for (const m of markers) {
       const key = (m.city || m.title || '').trim().toLowerCase()
@@ -119,14 +134,10 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
     }
   }
 
-  async function stampCity(hit: Hit) {
+  async function addCity(hit: Hit, mode: AddMode) {
     const city = cityFromHit(hit)
     if (!city) {
       setError('Não foi possível identificar a cidade deste lugar.')
-      return
-    }
-    if (stampedCities.has(cityKey(city))) {
-      setError(`Já existe um carimbo para ${city}. Só é permitido um por cidade.`)
       return
     }
 
@@ -139,16 +150,18 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
         title: city,
         city: cityKey(city),
         subtitle: hit.display_name,
-        stamp: true,
+        stamp: mode === 'visit',
+        is_departure: mode === 'departure',
         sort_order: ordered.length,
       })
       setQ('')
       setHits([])
+      setPendingHit(null)
       await onChanged()
       onStamped?.(marker)
       onSelect(marker.id)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Não foi possível carimbar')
+      setError(e instanceof Error ? e.message : 'Não foi possível adicionar')
     } finally {
       setBusy(false)
     }
@@ -188,14 +201,17 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
 
   if (hidden) return null
 
+  const pendingCity = pendingHit ? cityFromHit(pendingHit) : null
+  const pendingOnPath = pendingCity ? citiesOnPath.has(cityKey(pendingCity)) : false
+
   return (
     <div className="map-ui-overlay pointer-events-none">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="pointer-events-auto absolute left-3 bottom-[max(1rem,env(safe-area-inset-bottom))] md:bottom-6 w-14 h-14 rounded-full bg-earth text-cream shadow-xl border-2 border-paper flex items-center justify-center hover:brightness-110"
-        title={open ? 'Fechar' : 'Adicionar carimbo'}
-        aria-label={open ? 'Fechar menu de carimbo' : 'Adicionar carimbo'}
+        title={open ? 'Fechar' : 'Adicionar ao caminho'}
+        aria-label={open ? 'Fechar menu de carimbo' : 'Adicionar ao caminho'}
         aria-expanded={open}
       >
         {open ? <X size={28} strokeWidth={2} /> : <Stamp size={26} strokeWidth={1.75} />}
@@ -206,7 +222,7 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
           <div className="sticky top-0 bg-paper/95 backdrop-blur border-b border-dashed border-ink/20 px-3 py-2.5 flex items-center justify-between">
             <p className="font-display text-sm uppercase flex items-center gap-2">
               <Stamp size={16} className="text-stamp" />
-              Carimbar cidade
+              Caminho
             </p>
             <button type="button" onClick={() => setOpen(false)} className="p-2 hover:bg-sand rounded-full" aria-label="Fechar">
               <X size={18} />
@@ -217,35 +233,88 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
             <div>
               <label className="text-[11px] uppercase text-earth">Buscar cidade ou lugar</label>
               <p className="text-[10px] text-earth/70 mt-0.5 mb-1">
-                Um carimbo por cidade. O selo usa o nome da cidade.
+                Visita carimba o passaporte. Partida e retorno entram só no trajeto.
               </p>
               <div className="mt-1 flex gap-2">
                 <div className="relative flex-1">
                   <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-earth/60" />
                   <input
                     value={q}
-                    onChange={(e) => setQ(e.target.value)}
-                    placeholder="ex.: Barbacena, MG"
+                    onChange={(e) => {
+                      setQ(e.target.value)
+                      setPendingHit(null)
+                    }}
+                    placeholder="ex.: Santa Luzia, MG"
                     className="w-full border border-dashed border-ink/30 bg-cream pl-8 pr-2 py-2 text-sm outline-none focus:border-stamp"
                   />
                 </div>
               </div>
-              {hits.length > 0 && (
+
+              {pendingHit && pendingCity && (
+                <div className="mt-2 border border-ink/15 bg-cream p-2.5 space-y-2">
+                  <p className="text-sm font-medium text-stamp">{pendingCity}</p>
+                  <p className="text-[10px] text-earth/80 line-clamp-2">{pendingHit.display_name}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {!pendingOnPath && (
+                      <>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          className="rounded-lg bg-stamp text-cream px-2.5 py-1.5 text-[11px] font-medium disabled:opacity-50"
+                          onClick={() => void addCity(pendingHit, 'visit')}
+                        >
+                          Visita (carimbar)
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          className="rounded-lg border border-ink/25 bg-paper px-2.5 py-1.5 text-[11px] font-medium disabled:opacity-50"
+                          onClick={() => void addCity(pendingHit, 'departure')}
+                        >
+                          Só partida
+                        </button>
+                      </>
+                    )}
+                    {pendingOnPath && (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        className="rounded-lg border border-ink/25 bg-paper px-2.5 py-1.5 text-[11px] font-medium disabled:opacity-50"
+                        onClick={() => void addCity(pendingHit, 'return')}
+                      >
+                        Retorno ao caminho
+                      </button>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className="text-[10px] text-earth underline"
+                    onClick={() => setPendingHit(null)}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              )}
+
+              {!pendingHit && hits.length > 0 && (
                 <ul className="mt-2 border border-ink/15 bg-cream max-h-48 overflow-auto text-xs">
                   {hits.map((h) => {
                     const city = cityFromHit(h)
-                    const already = city ? stampedCities.has(cityKey(city)) : false
+                    const onPath = city ? citiesOnPath.has(cityKey(city)) : false
                     return (
                       <li key={`${h.lat}-${h.lon}-${h.display_name}`}>
                         <button
                           type="button"
-                          disabled={busy || !city || already}
+                          disabled={busy || !city}
                           className="w-full text-left px-2 py-2 hover:bg-sand/50 border-b border-ink/5 disabled:opacity-45 disabled:hover:bg-transparent"
-                          onClick={() => void stampCity(h)}
+                          onClick={() => {
+                            setPendingHit(h)
+                            setError('')
+                          }}
                         >
                           <span className="font-medium text-stamp block">
                             {city || 'Cidade não identificada'}
-                            {already ? ' · já carimbada' : ''}
+                            {onPath ? ' · já no caminho' : ''}
                           </span>
                           <span className="text-earth/80 line-clamp-2">{h.display_name}</span>
                         </button>
@@ -260,62 +329,68 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
             <div>
               <p className="text-[11px] uppercase text-earth mb-2">Cidades no caminho</p>
               {ordered.length === 0 ? (
-                <p className="text-sm text-earth/70">Nenhuma cidade ainda. Busque acima para carimbar.</p>
+                <p className="text-sm text-earth/70">Nenhuma cidade ainda. Busque acima para adicionar.</p>
               ) : (
                 <ul className="space-y-1.5">
-                  {ordered.map((m, i) => (
-                    <li
-                      key={m.id}
-                      draggable={!busy}
-                      onDragStart={() => onDragStart(i)}
-                      onDragOver={(e) => onDragOver(e, i)}
-                      onDragEnd={() => void onDragEnd()}
-                      className={`flex items-center gap-1 border border-ink/10 bg-cream/70 px-1.5 py-1.5 text-sm cursor-grab active:cursor-grabbing ${
-                        dragIndex === i ? 'opacity-60 border-stamp' : ''
-                      }`}
-                    >
-                      <span className="text-earth/50 shrink-0" aria-hidden>
-                        <GripVertical size={14} />
-                      </span>
-                      <span className="font-mono text-xs text-stamp w-4 shrink-0">{i + 1}</span>
-                      <button
-                        type="button"
-                        className="flex-1 text-left truncate hover:text-stamp min-w-0"
-                        onClick={() => {
-                          onSelect(m.id)
-                          setOpen(false)
-                        }}
+                  {ordered.map((m, i) => {
+                    const role = markerRoleLabel(m, ordered)
+                    return (
+                      <li
+                        key={m.id}
+                        draggable={!busy}
+                        onDragStart={() => onDragStart(i)}
+                        onDragOver={(e) => onDragOver(e, i)}
+                        onDragEnd={() => void onDragEnd()}
+                        className={`flex items-center gap-1 border border-ink/10 bg-cream/70 px-1.5 py-1.5 text-sm cursor-grab active:cursor-grabbing ${
+                          dragIndex === i ? 'opacity-60 border-stamp' : ''
+                        }`}
                       >
-                        {m.title}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy || i === 0}
-                        className="min-w-10 min-h-10 p-2 disabled:opacity-30 hover:bg-sand rounded text-earth inline-flex items-center justify-center"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          void move(i, -1)
-                        }}
-                        aria-label="Subir no caminho"
-                        title="Subir"
-                      >
-                        <ArrowUp size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy || i === ordered.length - 1}
-                        className="min-w-10 min-h-10 p-2 disabled:opacity-30 hover:bg-sand rounded text-earth inline-flex items-center justify-center"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          void move(i, 1)
-                        }}
-                        aria-label="Descer no caminho"
-                        title="Descer"
-                      >
-                        <ArrowDown size={16} />
-                      </button>
-                    </li>
-                  ))}
+                        <span className="text-earth/50 shrink-0" aria-hidden>
+                          <GripVertical size={14} />
+                        </span>
+                        <span className="font-mono text-xs text-stamp w-4 shrink-0">{i + 1}</span>
+                        <button
+                          type="button"
+                          className="flex-1 text-left min-w-0"
+                          onClick={() => {
+                            onSelect(m.id)
+                            setOpen(false)
+                          }}
+                        >
+                          <span className="truncate block hover:text-stamp">{m.title}</span>
+                          {role && (
+                            <span className="text-[9px] uppercase tracking-wide text-earth/70">{role}</span>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy || i === 0}
+                          className="min-w-10 min-h-10 p-2 disabled:opacity-30 hover:bg-sand rounded text-earth inline-flex items-center justify-center"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            void move(i, -1)
+                          }}
+                          aria-label="Subir no caminho"
+                          title="Subir"
+                        >
+                          <ArrowUp size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy || i === ordered.length - 1}
+                          className="min-w-10 min-h-10 p-2 disabled:opacity-30 hover:bg-sand rounded text-earth inline-flex items-center justify-center"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            void move(i, 1)
+                          }}
+                          aria-label="Descer no caminho"
+                          title="Descer"
+                        >
+                          <ArrowDown size={16} />
+                        </button>
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
               <p className="text-[10px] text-earth/60 mt-2">

@@ -26,6 +26,9 @@ export function Shell({ children, compact = false }: Props) {
                 >
                   Meu passaporte
                 </Link>
+                <Link className="hover:text-stamp shrink-0 hidden sm:inline" to="/trajetos">
+                  Trajetos
+                </Link>
                 <button type="button" onClick={logout} className="chip shrink-0">
                   Sair
                 </button>
