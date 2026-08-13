@@ -162,7 +162,8 @@ export const JOURNEY_COLOR_PALETTE = [
   '#A0522D',
 ]
 
-const API_BASE = '/api'
+/** Em produção na Vercel, aponte para a API hospedada separadamente (ex.: Railway). */
+const API_BASE = import.meta.env.VITE_API_BASE ?? '/api'
 
 type RequestOptions = RequestInit & { silent?: boolean }
 
