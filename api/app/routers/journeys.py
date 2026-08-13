@@ -41,6 +41,17 @@ from app.utils.deps import get_current_user
 
 router = APIRouter(tags=["journeys"])
 
+TRANSPORT_MODES = frozenset({"train", "car", "motorcycle", "bicycle", "walk", "plane", "ship"})
+
+
+def _normalize_transport(value: str | None) -> str | None:
+    if not value:
+        return None
+    key = value.strip().lower()
+    if key not in TRANSPORT_MODES:
+        raise HTTPException(status_code=400, detail="Meio de transporte inválido")
+    return key
+
 JOURNEY_COLORS = [
     "#2F6F73",
     "#C45C26",
@@ -351,6 +362,7 @@ async def create_marker(
         color=data.color,
         sort_order=data.sort_order if data.sort_order is not None else len(journey.markers),
         is_departure=is_departure,
+        transport=_normalize_transport(data.transport),
     )
     db.add(marker)
     await db.flush()
@@ -395,13 +407,13 @@ async def update_marker(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    journey = await _get_journey_full(db, slug)
-    if not journey or journey.owner_id != user.id:
-        raise HTTPException(status_code=404, detail="Viagem não encontrada")
+    journey = _require_edit(await _get_journey_full(db, slug), user)
     marker = next((m for m in journey.markers if m.id == marker_id), None)
     if not marker:
         raise HTTPException(status_code=404, detail="Marcador não encontrado")
     for field, value in data.model_dump(exclude_unset=True).items():
+        if field == "transport":
+            value = _normalize_transport(value)
         setattr(marker, field, value)
     if data.title is not None and marker.stamp:
         marker.stamp.label = data.title
@@ -903,6 +915,7 @@ async def get_passport_travels(username: str, db: AsyncSession = Depends(get_db)
                         title=m.title,
                         sort_order=m.sort_order,
                         is_departure=bool(getattr(m, "is_departure", False)),
+                        transport=getattr(m, "transport", None),
                         primary_photo_url=_primary_photo_url(m),
                     )
                     for m in ordered

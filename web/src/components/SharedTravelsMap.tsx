@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Polyline, useMap, Tooltip, ZoomControl } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, useMap, Tooltip, ZoomControl } from 'react-leaflet'
 import L from 'leaflet'
 import { Maximize2, Minimize2 } from 'lucide-react'
 import type { TravelJourney } from '../lib/api'
+import { MapPathLegs } from './MapPathLegs'
 
 function escapeHtml(s: string) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;')
@@ -225,24 +226,15 @@ export function SharedTravelsMap({ layers, className, defaultExpanded = false }:
           <FitAll layers={withPath} />
           <MapResize expanded={expanded} />
           {withPath.map((t) =>
-            t.journeys.map((j) => {
-              const path = j.markers.map((m) => [m.lat, m.lng] as [number, number])
-              if (path.length < 2) return null
-              return (
-                <Polyline
-                  key={`path-${t.username}-${j.id}`}
-                  positions={path}
-                  pathOptions={{
-                    color: t.color,
-                    weight: 3,
-                    opacity: 0.88,
-                    dashArray: '6, 8',
-                    lineCap: 'round',
-                    lineJoin: 'round',
-                  }}
-                />
-              )
-            }),
+            t.journeys.map((j) => (
+              <MapPathLegs
+                key={`path-${t.username}-${j.id}`}
+                pathKey={`${t.username}-${j.id}`}
+                markers={j.markers}
+                color={t.color}
+                weight={3}
+              />
+            )),
           )}
           {cityPins.map((pin) => (
             <Marker

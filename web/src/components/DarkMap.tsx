@@ -1,7 +1,8 @@
 import { useEffect, useMemo } from 'react'
-import { MapContainer, TileLayer, Marker, Polyline, useMap, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import type { Marker as MarkerType } from '../lib/api'
+import { MapPathLegs } from './MapPathLegs'
 
 function escapeHtml(s: string) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;')
@@ -88,11 +89,6 @@ export function WarmMap({
     return [-21.5, -43.5]
   }, [ordered])
 
-  const path = useMemo(
-    () => ordered.map((m) => [m.lat, m.lng] as [number, number]),
-    [ordered],
-  )
-
   const lineColor = pathColor || '#2F6F73'
 
   return (
@@ -111,20 +107,7 @@ export function WarmMap({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
-        {path.length >= 2 && (
-          <Polyline
-            key={`path-${lineColor}-${path.length}`}
-            positions={path}
-            pathOptions={{
-              color: lineColor,
-              weight: 2.5,
-              opacity: 0.9,
-              dashArray: '6, 8',
-              lineCap: 'round',
-              lineJoin: 'round',
-            }}
-          />
-        )}
+        <MapPathLegs markers={ordered} color={lineColor} pathKey={`${lineColor}-${ordered.length}`} />
         <FitBounds markers={ordered} bottomPad={bottomPad} />
         {!preview && <FlyTo target={flyTo} />}
         {onMapClick && !preview && <ClickHandler onClick={onMapClick} />}

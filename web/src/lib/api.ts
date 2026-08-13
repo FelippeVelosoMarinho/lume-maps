@@ -88,6 +88,7 @@ export type Marker = {
   sort_order: number
   is_departure?: boolean
   has_stamp?: boolean
+  transport?: string | null
   primary_photo_url?: string | null
   annotations: Annotation[]
   attachments: Attachment[]
@@ -100,6 +101,7 @@ export type TravelMarker = {
   title: string
   sort_order: number
   is_departure?: boolean
+  transport?: string | null
   primary_photo_url?: string | null
 }
 
@@ -356,6 +358,7 @@ class ApiClient {
       city?: string
       stamp?: boolean
       is_departure?: boolean
+      transport?: string | null
     },
   ) {
     return this.request<Marker>(`/journeys/${slug}/markers`, {

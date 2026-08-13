@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Polyline, useMap, Tooltip, ZoomControl } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, useMap, Tooltip, ZoomControl } from 'react-leaflet'
 import L from 'leaflet'
 import { Link } from 'react-router-dom'
 import { Maximize2, Minimize2 } from 'lucide-react'
 import type { TravelJourney } from '../lib/api'
 import { formatPeriod } from '../lib/dates'
+import { MapPathLegs } from './MapPathLegs'
 
 function escapeHtml(s: string) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;')
@@ -208,24 +209,15 @@ export function PassportTravelsMap({ journeys, className }: Props) {
           <ZoomControl position="bottomright" />
           <FitAll journeys={withPath} />
           <MapResize expanded={expanded} />
-          {withPath.map((j) => {
-            const path = j.markers.map((m) => [m.lat, m.lng] as [number, number])
-            if (path.length < 2) return null
-            return (
-              <Polyline
-                key={`path-${j.id}`}
-                positions={path}
-                pathOptions={{
-                  color: j.color,
-                  weight: 3,
-                  opacity: 0.88,
-                  dashArray: '6, 8',
-                  lineCap: 'round',
-                  lineJoin: 'round',
-                }}
-              />
-            )
-          })}
+          {withPath.map((j) => (
+            <MapPathLegs
+              key={`path-${j.id}`}
+              pathKey={j.id}
+              markers={j.markers}
+              color={j.color}
+              weight={3}
+            />
+          ))}
           {cityPins.map((pin) => (
             <Marker
               key={pin.key}

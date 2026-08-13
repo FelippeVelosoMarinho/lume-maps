@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { DragEvent } from 'react'
 import { ArrowDown, ArrowUp, GripVertical, Search, Stamp, X } from 'lucide-react'
 import { api, type Marker } from '../lib/api'
+import { isTransportMode, transportLabel, type TransportMode } from '../lib/transport'
+import { TransportPicker } from './TransportPicker'
 
 type NominatimAddress = {
   city?: string
@@ -76,6 +78,7 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
   const [q, setQ] = useState('')
   const [hits, setHits] = useState<Hit[]>([])
   const [pendingHit, setPendingHit] = useState<Hit | null>(null)
+  const [pendingTransport, setPendingTransport] = useState<TransportMode | ''>('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [ordered, setOrdered] = useState<Marker[]>(() => sortMarkers(markers))
@@ -140,6 +143,11 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
       setError('Não foi possível identificar a cidade deste lugar.')
       return
     }
+    const needsTransport = ordered.length > 0
+    if (needsTransport && !pendingTransport) {
+      setError('Escolha o meio de transporte deste trecho.')
+      return
+    }
 
     setBusy(true)
     setError('')
@@ -152,6 +160,7 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
         subtitle: hit.display_name,
         stamp: mode === 'visit',
         is_departure: mode === 'departure',
+        transport: needsTransport ? pendingTransport : null,
         sort_order: ordered.length,
       })
       setQ('')
@@ -162,6 +171,20 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
       onSelect(marker.id)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Não foi possível adicionar')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function setLegTransport(markerId: string, transport: TransportMode) {
+    setBusy(true)
+    setError('')
+    try {
+      await api.updateMarker(slug, markerId, { transport })
+      setPendingTransport(transport)
+      await onChanged()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Não foi possível salvar o transporte')
     } finally {
       setBusy(false)
     }
@@ -203,6 +226,8 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
 
   const pendingCity = pendingHit ? cityFromHit(pendingHit) : null
   const pendingOnPath = pendingCity ? citiesOnPath.has(cityKey(pendingCity)) : false
+  const needsTransport = ordered.length > 0
+  const canAdd = !busy && (!needsTransport || !!pendingTransport)
 
   return (
     <div className="map-ui-overlay pointer-events-none">
@@ -254,12 +279,27 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
                 <div className="mt-2 border border-ink/15 bg-cream p-2.5 space-y-2">
                   <p className="text-sm font-medium text-stamp">{pendingCity}</p>
                   <p className="text-[10px] text-earth/80 line-clamp-2">{pendingHit.display_name}</p>
+                  {ordered.length > 0 && (
+                    <div>
+                      <p className="text-[10px] uppercase text-earth mb-1">
+                        Trecho de {ordered[ordered.length - 1].title} até aqui
+                      </p>
+                      <TransportPicker
+                        value={pendingTransport}
+                        onChange={(v) => {
+                          setPendingTransport(v)
+                          setError('')
+                        }}
+                        disabled={busy}
+                      />
+                    </div>
+                  )}
                   <div className="flex flex-wrap gap-1.5">
                     {!pendingOnPath && (
                       <>
                         <button
                           type="button"
-                          disabled={busy}
+                          disabled={!canAdd}
                           className="rounded-lg bg-stamp text-cream px-2.5 py-1.5 text-[11px] font-medium disabled:opacity-50"
                           onClick={() => void addCity(pendingHit, 'visit')}
                         >
@@ -267,7 +307,7 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
                         </button>
                         <button
                           type="button"
-                          disabled={busy}
+                          disabled={!canAdd}
                           className="rounded-lg border border-ink/25 bg-paper px-2.5 py-1.5 text-[11px] font-medium disabled:opacity-50"
                           onClick={() => void addCity(pendingHit, 'departure')}
                         >
@@ -278,7 +318,7 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
                     {pendingOnPath && (
                       <button
                         type="button"
-                        disabled={busy}
+                        disabled={!canAdd}
                         className="rounded-lg border border-ink/25 bg-paper px-2.5 py-1.5 text-[11px] font-medium disabled:opacity-50"
                         onClick={() => void addCity(pendingHit, 'return')}
                       >
@@ -334,17 +374,32 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
                 <ul className="space-y-1.5">
                   {ordered.map((m, i) => {
                     const role = markerRoleLabel(m, ordered)
+                    const prev = i > 0 ? ordered[i - 1] : null
+                    const currentTransport = isTransportMode(m.transport) ? m.transport : ''
                     return (
-                      <li
-                        key={m.id}
-                        draggable={!busy}
-                        onDragStart={() => onDragStart(i)}
-                        onDragOver={(e) => onDragOver(e, i)}
-                        onDragEnd={() => void onDragEnd()}
-                        className={`flex items-center gap-1 border border-ink/10 bg-cream/70 px-1.5 py-1.5 text-sm cursor-grab active:cursor-grabbing ${
-                          dragIndex === i ? 'opacity-60 border-stamp' : ''
-                        }`}
-                      >
+                      <li key={m.id} className="space-y-1">
+                        {prev && (
+                          <div className="pl-7 pr-1">
+                            <p className="text-[9px] uppercase tracking-wide text-earth/70 mb-0.5">
+                              {transportLabel(m.transport) || 'Meio deste trecho'}
+                            </p>
+                            <TransportPicker
+                              compact
+                              value={currentTransport}
+                              disabled={busy}
+                              onChange={(v) => void setLegTransport(m.id, v)}
+                            />
+                          </div>
+                        )}
+                        <div
+                          draggable={!busy}
+                          onDragStart={() => onDragStart(i)}
+                          onDragOver={(e) => onDragOver(e, i)}
+                          onDragEnd={() => void onDragEnd()}
+                          className={`flex items-center gap-1 border border-ink/10 bg-cream/70 px-1.5 py-1.5 text-sm cursor-grab active:cursor-grabbing ${
+                            dragIndex === i ? 'opacity-60 border-stamp' : ''
+                          }`}
+                        >
                         <span className="text-earth/50 shrink-0" aria-hidden>
                           <GripVertical size={14} />
                         </span>
@@ -388,6 +443,7 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
                         >
                           <ArrowDown size={16} />
                         </button>
+                        </div>
                       </li>
                     )
                   })}
