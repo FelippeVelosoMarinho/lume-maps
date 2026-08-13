@@ -89,7 +89,7 @@ class Marker(Base):
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     # Ponto de partida no trajeto — entra no caminho, sem carimbo de visita
     is_departure: Mapped[bool] = mapped_column(Boolean, default=False)
-    # Meio usado no trecho anterior → este ponto (train|car|motorcycle|bicycle|walk|plane|ship)
+    # Meio usado no trecho anterior → este ponto (train|bus|car|motorcycle|bicycle|walk|plane|ship)
     transport: Mapped[str | None] = mapped_column(String(20), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
 

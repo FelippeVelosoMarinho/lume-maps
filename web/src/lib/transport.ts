@@ -2,6 +2,7 @@ import L from 'leaflet'
 
 export const TRANSPORT_MODES = [
   { id: 'train', label: 'Trem', emoji: '🚂' },
+  { id: 'bus', label: 'Ônibus', emoji: '🚌' },
   { id: 'car', label: 'Carro', emoji: '🚗' },
   { id: 'motorcycle', label: 'Moto', emoji: '🏍️' },
   { id: 'bicycle', label: 'Bicicleta', emoji: '🚲' },

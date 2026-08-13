@@ -41,7 +41,7 @@ from app.utils.deps import get_current_user
 
 router = APIRouter(tags=["journeys"])
 
-TRANSPORT_MODES = frozenset({"train", "car", "motorcycle", "bicycle", "walk", "plane", "ship"})
+TRANSPORT_MODES = frozenset({"train", "bus", "car", "motorcycle", "bicycle", "walk", "plane", "ship"})
 
 
 def _normalize_transport(value: str | None) -> str | None:
