@@ -30,6 +30,7 @@ export type JourneySummary = {
   cover_url: string | null
   started_on: string | null
   ended_on: string | null
+  is_planning?: boolean
   color?: string | null
   /** false quando o mapa é de outra pessoa (companheiro) */
   is_mine?: boolean
@@ -112,6 +113,7 @@ export type TravelJourney = {
   color: string
   started_on: string | null
   ended_on: string | null
+  is_planning?: boolean
   markers: TravelMarker[]
 }
 
@@ -143,6 +145,7 @@ export type Journey = {
   playlist_url: string | null
   started_on: string | null
   ended_on: string | null
+  is_planning?: boolean
   is_public: boolean
   color?: string | null
   owner_username: string | null
@@ -293,6 +296,7 @@ class ApiClient {
     playlist_url?: string
     started_on?: string | null
     ended_on?: string | null
+    is_planning?: boolean
     color?: string | null
   }) {
     return this.request<Journey>('/journeys', { method: 'POST', body: JSON.stringify(data) })
@@ -315,6 +319,7 @@ class ApiClient {
       playlist_url: string | null
       started_on: string | null
       ended_on: string | null
+      is_planning?: boolean
       is_public: boolean
       color: string | null
     }>,

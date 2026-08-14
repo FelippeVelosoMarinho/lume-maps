@@ -14,9 +14,11 @@ type Props = {
   color: string
   pathKey: string
   weight?: number
+  opacity?: number
+  dashArray?: string
 }
 
-export function MapPathLegs({ markers, color, pathKey, weight = 2.5 }: Props) {
+export function MapPathLegs({ markers, color, pathKey, weight = 2.5, opacity = 0.9, dashArray = '6, 8' }: Props) {
   if (markers.length < 2) return null
 
   const path = markers.map((m) => [m.lat, m.lng] as [number, number])
@@ -29,8 +31,8 @@ export function MapPathLegs({ markers, color, pathKey, weight = 2.5 }: Props) {
         pathOptions={{
           color,
           weight,
-          opacity: 0.9,
-          dashArray: '6, 8',
+          opacity,
+          dashArray,
           lineCap: 'round',
           lineJoin: 'round',
         }}

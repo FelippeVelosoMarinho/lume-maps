@@ -306,9 +306,17 @@ export function PassportPage() {
                       <p className="font-display flex items-center gap-2 pr-16 min-w-0">
                         <span
                           className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ background: j.color || 'var(--color-stamp)' }}
+                          style={{
+                            background: j.color || 'var(--color-stamp)',
+                            opacity: j.is_planning ? 0.45 : 1,
+                          }}
                         />
                         <span className="truncate">{j.title}</span>
+                        {j.is_planning && (
+                          <span className="text-[9px] uppercase tracking-wide text-earth/70 shrink-0">
+                            plano
+                          </span>
+                        )}
                       </p>
                       <p className="text-sm text-earth mt-1 line-clamp-2">
                         {j.subtitle || 'Sem descrição'}

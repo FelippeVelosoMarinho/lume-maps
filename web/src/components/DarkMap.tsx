@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react'
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import type { Marker as MarkerType } from '../lib/api'
+import { PLANNING_MAP_OPACITY } from '../lib/planningMaps'
 import { MapPathLegs } from './MapPathLegs'
 
 function escapeHtml(s: string) {
@@ -62,6 +63,8 @@ type Props = {
   className?: string
   flyTo?: { lat: number; lng: number } | null
   pathColor?: string
+  /** Mapa de planejamento — trajeto com opacidade reduzida */
+  isPlanning?: boolean
   /** Espaço inferior reservado para sheets (px) */
   bottomPad?: number
   /** Prévia estática (sem zoom/arraste) */
@@ -76,6 +79,7 @@ export function WarmMap({
   className,
   flyTo,
   pathColor,
+  isPlanning = false,
   bottomPad = 0,
   preview = false,
 }: Props) {
@@ -107,7 +111,13 @@ export function WarmMap({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
-        <MapPathLegs markers={ordered} color={lineColor} pathKey={`${lineColor}-${ordered.length}`} />
+        <MapPathLegs
+          markers={ordered}
+          color={lineColor}
+          pathKey={`${lineColor}-${ordered.length}`}
+          opacity={isPlanning ? PLANNING_MAP_OPACITY : 0.9}
+          dashArray={isPlanning ? '4, 10' : '6, 8'}
+        />
         <FitBounds markers={ordered} bottomPad={bottomPad} />
         {!preview && <FlyTo target={flyTo} />}
         {onMapClick && !preview && <ClickHandler onClick={onMapClick} />}

@@ -187,6 +187,7 @@ def _journey_out(journey: Journey, color_map: dict[str, str] | None = None) -> J
         playlist_url=journey.playlist_url,
         started_on=journey.started_on,
         ended_on=journey.ended_on,
+        is_planning=bool(getattr(journey, "is_planning", False)),
         is_public=journey.is_public,
         color=None,
         owner_username=owner_username,
@@ -243,6 +244,7 @@ async def create_journey(
         playlist_url=data.playlist_url,
         started_on=data.started_on,
         ended_on=data.ended_on,
+        is_planning=bool(data.is_planning),
         map_color=data.color,
     )
     db.add(journey)
@@ -341,8 +343,8 @@ async def create_marker(
     city_key = (data.city or city_label).strip().casefold()
     is_departure = bool(data.is_departure)
 
-    # Partida / retorno: entram no caminho. Carimbo só na primeira visita real.
-    want_stamp = bool(data.stamp) and not is_departure
+    # Partida / retorno: entram no caminho. Carimbo só na primeira visita real (nunca em planejamento).
+    want_stamp = bool(data.stamp) and not is_departure and not bool(getattr(journey, "is_planning", False))
     if want_stamp and user.passport:
         for existing in journey.markers:
             existing_key = (existing.city or existing.title or "").strip().casefold()
@@ -907,6 +909,7 @@ async def get_passport_travels(username: str, db: AsyncSession = Depends(get_db)
                 color=color_map.get(j.id, JOURNEY_COLORS[0]),
                 started_on=j.started_on,
                 ended_on=j.ended_on,
+                is_planning=bool(getattr(j, "is_planning", False)),
                 markers=[
                     TravelMarkerOut(
                         id=m.id,

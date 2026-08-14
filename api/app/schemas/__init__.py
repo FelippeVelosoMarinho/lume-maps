@@ -63,6 +63,7 @@ class JourneySummary(BaseModel):
     cover_url: str | None
     started_on: date | None
     ended_on: date | None
+    is_planning: bool = False
     color: str | None = None
     is_mine: bool = True
 
@@ -188,6 +189,7 @@ class JourneyCreate(BaseModel):
     playlist_url: str | None = None
     started_on: date | None = None
     ended_on: date | None = None
+    is_planning: bool = False
     color: str | None = None
 
 
@@ -198,6 +200,7 @@ class JourneyUpdate(BaseModel):
     playlist_url: str | None = None
     started_on: date | None = None
     ended_on: date | None = None
+    is_planning: bool | None = None
     is_public: bool | None = None
     color: str | None = None
 
@@ -230,6 +233,7 @@ class JourneyOut(BaseModel):
     playlist_url: str | None
     started_on: date | None
     ended_on: date | None
+    is_planning: bool = False
     is_public: bool
     color: str | None = None
     owner_username: str | None = None
@@ -260,6 +264,7 @@ class TravelJourneyOut(BaseModel):
     color: str
     started_on: date | None = None
     ended_on: date | None = None
+    is_planning: bool = False
     markers: list[TravelMarkerOut] = []
 
 

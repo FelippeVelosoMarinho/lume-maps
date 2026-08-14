@@ -43,6 +43,8 @@ class Journey(Base):
     map_color: Mapped[str | None] = mapped_column(String(20), nullable=True)
     started_on: Mapped[date | None] = mapped_column(Date, nullable=True)
     ended_on: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # True = planejamento futuro; False = recordação (viagem realizada)
+    is_planning: Mapped[bool] = mapped_column(Boolean, default=False)
     is_public: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(

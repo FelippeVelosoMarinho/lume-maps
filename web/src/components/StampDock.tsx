@@ -62,6 +62,8 @@ function markerRoleLabel(m: Marker, ordered: Marker[]): string | null {
 type Props = {
   slug: string
   markers: Marker[]
+  /** Mapa de planejamento — locais não geram carimbos */
+  isPlanning?: boolean
   onChanged: () => void | Promise<void>
   onSelect: (id: string) => void
   onStamped?: (marker: Marker) => void
@@ -69,7 +71,7 @@ type Props = {
   hidden?: boolean
 }
 
-export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidden }: Props) {
+export function StampDock({ slug, markers, isPlanning = false, onChanged, onSelect, onStamped, hidden }: Props) {
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
@@ -158,8 +160,8 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
         title: city,
         city: cityKey(city),
         subtitle: hit.display_name,
-        stamp: mode === 'visit',
-        is_departure: mode === 'departure',
+        stamp: !isPlanning && mode === 'visit',
+        is_departure: !isPlanning && mode === 'departure',
         transport: needsTransport ? pendingTransport : null,
         sort_order: ordered.length,
       })
@@ -247,7 +249,7 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
           <div className="sticky top-0 bg-paper/95 backdrop-blur border-b border-dashed border-ink/20 px-3 py-2.5 flex items-center justify-between">
             <p className="font-display text-sm uppercase flex items-center gap-2">
               <Stamp size={16} className="text-stamp" />
-              Caminho
+              {isPlanning ? 'Planejamento' : 'Caminho'}
             </p>
             <button type="button" onClick={() => setOpen(false)} className="p-2 hover:bg-sand rounded-full" aria-label="Fechar">
               <X size={18} />
@@ -258,7 +260,9 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
             <div>
               <label className="text-[11px] uppercase text-earth">Buscar cidade ou lugar</label>
               <p className="text-[10px] text-earth/70 mt-0.5 mb-1">
-                Visita carimba o passaporte. Partida e retorno entram só no trajeto.
+                {isPlanning
+                  ? 'Adicione cidades ao roteiro. Nenhum carimbo será gerado.'
+                  : 'Visita carimba o passaporte. Partida e retorno entram só no trajeto.'}
               </p>
               <div className="mt-1 flex gap-2">
                 <div className="relative flex-1">
@@ -295,35 +299,48 @@ export function StampDock({ slug, markers, onChanged, onSelect, onStamped, hidde
                     </div>
                   )}
                   <div className="flex flex-wrap gap-1.5">
-                    {!pendingOnPath && (
-                      <>
-                        <button
-                          type="button"
-                          disabled={!canAdd}
-                          className="rounded-lg bg-stamp text-cream px-2.5 py-1.5 text-[11px] font-medium disabled:opacity-50"
-                          onClick={() => void addCity(pendingHit, 'visit')}
-                        >
-                          Visita (carimbar)
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!canAdd}
-                          className="rounded-lg border border-ink/25 bg-paper px-2.5 py-1.5 text-[11px] font-medium disabled:opacity-50"
-                          onClick={() => void addCity(pendingHit, 'departure')}
-                        >
-                          Só partida
-                        </button>
-                      </>
-                    )}
-                    {pendingOnPath && (
+                    {isPlanning ? (
                       <button
                         type="button"
                         disabled={!canAdd}
-                        className="rounded-lg border border-ink/25 bg-paper px-2.5 py-1.5 text-[11px] font-medium disabled:opacity-50"
+                        className="rounded-lg bg-stamp text-cream px-2.5 py-1.5 text-[11px] font-medium disabled:opacity-50"
                         onClick={() => void addCity(pendingHit, 'return')}
                       >
-                        Retorno ao caminho
+                        Adicionar ao roteiro
                       </button>
+                    ) : (
+                      <>
+                        {!pendingOnPath && (
+                          <>
+                            <button
+                              type="button"
+                              disabled={!canAdd}
+                              className="rounded-lg bg-stamp text-cream px-2.5 py-1.5 text-[11px] font-medium disabled:opacity-50"
+                              onClick={() => void addCity(pendingHit, 'visit')}
+                            >
+                              Visita (carimbar)
+                            </button>
+                            <button
+                              type="button"
+                              disabled={!canAdd}
+                              className="rounded-lg border border-ink/25 bg-paper px-2.5 py-1.5 text-[11px] font-medium disabled:opacity-50"
+                              onClick={() => void addCity(pendingHit, 'departure')}
+                            >
+                              Só partida
+                            </button>
+                          </>
+                        )}
+                        {pendingOnPath && (
+                          <button
+                            type="button"
+                            disabled={!canAdd}
+                            className="rounded-lg border border-ink/25 bg-paper px-2.5 py-1.5 text-[11px] font-medium disabled:opacity-50"
+                            onClick={() => void addCity(pendingHit, 'return')}
+                          >
+                            Retorno ao caminho
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                   <button

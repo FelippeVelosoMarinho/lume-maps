@@ -243,6 +243,11 @@ export function JourneyPage({ mode }: { mode: Mode }) {
             <div className="min-w-0">
               <p className="font-display text-sm md:text-base leading-snug line-clamp-2">
                 {journey.title}
+                {journey.is_planning && (
+                  <span className="ml-2 text-[10px] uppercase tracking-wide text-earth/80 font-sans align-middle">
+                    planejamento
+                  </span>
+                )}
               </p>
               <JourneyPeopleLine
                 ownerUsername={journey.owner_username}
@@ -313,6 +318,7 @@ export function JourneyPage({ mode }: { mode: Mode }) {
           onSelect={selectPlace}
           flyTo={flyTo}
           pathColor={journey.color || undefined}
+          isPlanning={!!journey.is_planning}
           bottomPad={sheetOpen ? 220 : 48}
         />
 
@@ -339,6 +345,7 @@ export function JourneyPage({ mode }: { mode: Mode }) {
             <StampDock
               slug={slug}
               markers={journey.markers}
+              isPlanning={!!journey.is_planning}
               onChanged={load}
               onSelect={selectPlace}
               onStamped={(m) => setFlyTo({ lat: m.lat, lng: m.lng })}

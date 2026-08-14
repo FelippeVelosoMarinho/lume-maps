@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, useMap, Tooltip, ZoomControl } from 'r
 import L from 'leaflet'
 import { Maximize2, Minimize2 } from 'lucide-react'
 import type { TravelJourney } from '../lib/api'
+import { PLANNING_MAP_OPACITY, readShowPlanningMaps, writeShowPlanningMaps } from '../lib/planningMaps'
 import { MapPathLegs } from './MapPathLegs'
 
 function escapeHtml(s: string) {
@@ -19,18 +20,24 @@ function pickRandom<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)]
 }
 
-function journeyNodeIcon(title: string, color: string | null, photoUrl?: string | null) {
+function journeyNodeIcon(
+  title: string,
+  color: string | null,
+  photoUrl?: string | null,
+  opacity = 1,
+) {
   const safe = escapeHtml(title).slice(0, 28)
   const hasPhoto = !!photoUrl
   const border = hasPhoto ? 'rgba(26, 21, 16, 0.35)' : color || '#2F6F73'
   const photoStyle = hasPhoto
     ? `background-image:url('${String(photoUrl).replace(/'/g, '%27')}');`
     : `background:${color || '#2F6F73'};`
+  const wrapStyle = opacity < 1 ? `opacity:${opacity};` : ''
   return L.divIcon({
     className: '',
     iconSize: [112, 56],
     iconAnchor: [56, 28],
-    html: `<div class="stamp-marker-wrap">
+    html: `<div class="stamp-marker-wrap" style="${wrapStyle}">
       <div class="stamp-marker-icon ${hasPhoto ? 'has-photo' : ''}" style="border-color:${border};${photoStyle}"></div>
       <div class="stamp-marker-label">${safe}</div>
     </div>`,
@@ -75,6 +82,7 @@ type CityPin = {
   photoUrl: string | null
   color: string | null
   travelerNames: string[]
+  isPlanning: boolean
 }
 
 type Props = {
@@ -86,10 +94,25 @@ type Props = {
 
 export function SharedTravelsMap({ layers, className, defaultExpanded = false }: Props) {
   const [expanded, setExpanded] = useState(defaultExpanded)
+  const [showPlanning, setShowPlanning] = useState(readShowPlanningMaps)
+
+  const allJourneys = useMemo(() => layers.flatMap((t) => t.journeys), [layers])
+  const hasPlanning = useMemo(() => allJourneys.some((j) => j.is_planning), [allJourneys])
+
+  const filteredLayers = useMemo(
+    () =>
+      layers
+        .map((t) => ({
+          ...t,
+          journeys: showPlanning ? t.journeys : t.journeys.filter((j) => !j.is_planning),
+        }))
+        .filter((t) => t.journeys.length > 0),
+    [layers, showPlanning],
+  )
 
   const withPath = useMemo(
     () =>
-      layers
+      filteredLayers
         .map((t) => ({
           ...t,
           journeys: t.journeys
@@ -100,7 +123,7 @@ export function SharedTravelsMap({ layers, className, defaultExpanded = false }:
             .filter((j) => j.markers.length > 0),
         }))
         .filter((t) => t.journeys.length > 0),
-    [layers],
+    [filteredLayers],
   )
 
   const cityPins = useMemo(() => {
@@ -111,6 +134,7 @@ export function SharedTravelsMap({ layers, className, defaultExpanded = false }:
       photos: string[]
       colors: string[]
       travelerNames: string[]
+      isPlanning: boolean
     }
     const byCity = new Map<string, Acc>()
 
@@ -127,6 +151,7 @@ export function SharedTravelsMap({ layers, className, defaultExpanded = false }:
               photos: [],
               colors: [],
               travelerNames: [],
+              isPlanning: !!j.is_planning,
             }
             byCity.set(key, acc)
           }
@@ -140,6 +165,7 @@ export function SharedTravelsMap({ layers, className, defaultExpanded = false }:
           if (name && !acc.travelerNames.includes(name)) {
             acc.travelerNames.push(name)
           }
+          if (j.is_planning) acc.isPlanning = true
         }
       }
     }
@@ -155,10 +181,16 @@ export function SharedTravelsMap({ layers, className, defaultExpanded = false }:
         photoUrl: hasPhoto ? pickRandom(acc.photos) : null,
         color: hasPhoto ? null : pickRandom(acc.colors),
         travelerNames: acc.travelerNames,
+        isPlanning: acc.isPlanning,
       })
     }
     return pins
   }, [withPath])
+
+  function togglePlanning(show: boolean) {
+    setShowPlanning(show)
+    writeShowPlanningMaps(show)
+  }
 
   useEffect(() => {
     if (!expanded) return
@@ -174,11 +206,34 @@ export function SharedTravelsMap({ layers, className, defaultExpanded = false }:
     }
   }, [expanded])
 
-  if (!withPath.length) {
+  const hasAnyMarkers = allJourneys.some((j) => j.markers.length > 0)
+
+  if (!hasAnyMarkers) {
     return (
       <p className="text-sm text-earth py-6 text-center">
         Ainda não há trajetos públicos para mostrar. Adicione viajantes com mapas.
       </p>
+    )
+  }
+
+  if (!withPath.length) {
+    return (
+      <div className="space-y-3">
+        {hasPlanning && (
+          <label className="inline-flex items-center gap-2 text-xs text-earth cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showPlanning}
+              onChange={(e) => togglePlanning(e.target.checked)}
+              className="rounded border-ink/30"
+            />
+            Mostrar mapas de planejamento
+          </label>
+        )}
+        <p className="text-sm text-earth py-6 text-center">
+          Nenhum trajeto visível. Ative os mapas de planejamento para vê-los.
+        </p>
+      </div>
     )
   }
 
@@ -232,7 +287,9 @@ export function SharedTravelsMap({ layers, className, defaultExpanded = false }:
                 pathKey={`${t.username}-${j.id}`}
                 markers={j.markers}
                 color={t.color}
-                weight={3}
+                weight={j.is_planning ? 2 : 3}
+                opacity={j.is_planning ? PLANNING_MAP_OPACITY : 0.9}
+                dashArray={j.is_planning ? '4, 10' : '6, 8'}
               />
             )),
           )}
@@ -240,10 +297,21 @@ export function SharedTravelsMap({ layers, className, defaultExpanded = false }:
             <Marker
               key={pin.key}
               position={[pin.lat, pin.lng]}
-              icon={journeyNodeIcon(pin.title, pin.color, pin.photoUrl)}
+              icon={journeyNodeIcon(
+                pin.title,
+                pin.color,
+                pin.photoUrl,
+                pin.isPlanning ? PLANNING_MAP_OPACITY : 1,
+              )}
             >
               <Tooltip>
                 <span className="font-medium">{pin.title}</span>
+                {pin.isPlanning && (
+                  <>
+                    <br />
+                    <span className="text-xs opacity-80">Planejamento</span>
+                  </>
+                )}
                 {pin.travelerNames.map((name) => (
                   <span key={name}>
                     <br />
@@ -260,6 +328,17 @@ export function SharedTravelsMap({ layers, className, defaultExpanded = false }:
 
   return (
     <div className={className ?? 'space-y-3'}>
+      {hasPlanning && (
+        <label className="inline-flex items-center gap-2 text-xs text-earth cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showPlanning}
+            onChange={(e) => togglePlanning(e.target.checked)}
+            className="rounded border-ink/30"
+          />
+          Mostrar mapas de planejamento
+        </label>
+      )}
       {mapFrame}
       {expanded && (
         <div

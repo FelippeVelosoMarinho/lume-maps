@@ -35,6 +35,7 @@ export function JourneyEditMenu({
   const [title, setTitle] = useState(journey.title)
   const [startedOn, setStartedOn] = useState(journey.started_on ?? '')
   const [endedOn, setEndedOn] = useState(journey.ended_on ?? '')
+  const [isPlanning, setIsPlanning] = useState(!!journey.is_planning)
   const [playlist, setPlaylist] = useState(journey.playlist_url ?? '')
   const [color, setColor] = useState(journey.color || JOURNEY_COLOR_PALETTE[0])
   const [busy, setBusy] = useState(false)
@@ -47,6 +48,7 @@ export function JourneyEditMenu({
     setTitle(journey.title)
     setStartedOn(journey.started_on ?? '')
     setEndedOn(journey.ended_on ?? '')
+    setIsPlanning(!!journey.is_planning)
     setPlaylist(journey.playlist_url ?? '')
     setColor(journey.color || JOURNEY_COLOR_PALETTE[0])
     setCompanions(journey.companions ?? [])
@@ -100,6 +102,7 @@ export function JourneyEditMenu({
         title: title.trim() || journey.title,
         started_on: startedOn || null,
         ended_on: endedOn || null,
+        is_planning: isPlanning,
         playlist_url: playlist.trim() || null,
         color,
       })
@@ -210,9 +213,27 @@ export function JourneyEditMenu({
                 className="mt-1 w-full border border-dashed border-ink/30 bg-cream px-3 py-2 text-sm outline-none focus:border-earth"
               />
             </label>
+            {isOwner && (
+              <label className="flex items-start gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isPlanning}
+                  onChange={(e) => setIsPlanning(e.target.checked)}
+                  className="mt-1 rounded border-ink/30"
+                />
+                <span>
+                  <span className="block text-[11px] uppercase text-earth">Mapa de planejamento</span>
+                  <span className="text-[10px] text-earth/80">
+                    Roteiro futuro — sem carimbos no passaporte. Datas opcionais.
+                  </span>
+                </span>
+              </label>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <label className="block text-sm min-w-0">
-                <span className="text-[11px] uppercase text-earth">Início</span>
+                <span className="text-[11px] uppercase text-earth">
+                  {isPlanning ? 'Início previsto' : 'Início'}
+                </span>
                 <input
                   type="date"
                   value={startedOn}
@@ -221,7 +242,9 @@ export function JourneyEditMenu({
                 />
               </label>
               <label className="block text-sm min-w-0">
-                <span className="text-[11px] uppercase text-earth">Fim</span>
+                <span className="text-[11px] uppercase text-earth">
+                  {isPlanning ? 'Fim previsto' : 'Fim'}
+                </span>
                 <input
                   type="date"
                   value={endedOn}
