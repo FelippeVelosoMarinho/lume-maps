@@ -20,7 +20,7 @@ const STACK_SHIFTS = [
 ] as const
 
 /** Pilha de fotos da viagem (substitui o mapinha na landing). */
-function PhotoStack({
+export function PhotoStack({
   urls,
   label,
 }: {
@@ -62,6 +62,24 @@ function PhotoStack({
   )
 }
 
+export function journeyPhotoStackUrls(journey: Journey): string[] {
+  const cover = journey.cover_url ? mediaUrl(journey.cover_url) : null
+  const photos = journey.markers
+    .flatMap((m) =>
+      (m.attachments ?? [])
+        .filter((a) => a.kind === 'photo')
+        .map((a) => ({ url: a.url, primary: a.is_primary })),
+    )
+    .sort((a, b) => Number(b.primary) - Number(a.primary))
+
+  return [
+    ...(cover ? [cover] : []),
+    ...photos
+      .map((p) => mediaUrl(p.url))
+      .filter((u): u is string => !!u && u !== cover),
+  ]
+}
+
 /** Landing de compartilhamento: chamada acima, capa em destaque. */
 export function JourneyInviteView({ journey }: Props) {
   const period = formatPeriod(journey.started_on, journey.ended_on)
@@ -69,23 +87,7 @@ export function JourneyInviteView({ journey }: Props) {
   const companions = journey.companions ?? []
   const next = encodeURIComponent(`/v/${journey.slug}`)
 
-  const cover = journey.cover_url ? mediaUrl(journey.cover_url) : null
-  const photos = journey.markers
-    .flatMap((m) =>
-      (m.attachments ?? [])
-        .filter((a) => a.kind === 'photo')
-        .map((a) => ({ url: a.url, title: m.title, primary: a.is_primary })),
-    )
-    .sort((a, b) => Number(b.primary) - Number(a.primary))
-
-  const photoUrls = [
-    ...(cover ? [cover] : []),
-    ...photos
-      .map((p) => mediaUrl(p.url))
-      .filter((u): u is string => !!u && u !== cover),
-  ]
-
-  const stackUrls = photoUrls.length > 0 ? photoUrls : []
+  const stackUrls = journeyPhotoStackUrls(journey)
   const playlist = journey.playlist_url?.trim() || ''
 
   return (

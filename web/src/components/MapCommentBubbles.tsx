@@ -42,17 +42,18 @@ function authorInitial(name: string, username: string) {
   return src.charAt(0).toUpperCase()
 }
 
-/** Distribui balões num arco acima do pin, com espaçamento mínimo. */
+/** Distribui balões num arco acima do pin da cidade (coordenadas de layer). */
 function spreadOffset(count: number, index: number): { dx: number; dy: number } {
-  const baseLift = 98
-  const minGap = 76
+  // Acima do ícone + rótulo da cidade (~72px) + folga
+  const baseLift = 118
+  const minGap = 108
 
   if (count <= 1) return { dx: 0, dy: -baseLift }
 
   const arcWidth = Math.max(minGap * (count - 1), minGap)
   const t = index / (count - 1)
   const dx = (t - 0.5) * arcWidth
-  const dy = -baseLift - Math.abs(t - 0.5) * 28
+  const dy = -baseLift - Math.abs(t - 0.5) * 24
 
   return { dx, dy }
 }
@@ -98,7 +99,7 @@ function CommentBubble({
 }) {
   const styleDef = ANN_BUBBLE_STYLES[item.annType]
   const { Icon } = styleDef
-  const excerpt = item.body.slice(0, 80) + (item.body.length > 80 ? '…' : '')
+  const excerpt = item.body.slice(0, 110) + (item.body.length > 110 ? '…' : '')
 
   return (
     <div
@@ -191,7 +192,7 @@ export function MapCommentBubbles({ markers, selectedId, onSelect, authorPhotos 
   const updatePositions = useCallback(() => {
     const next: Record<string, { x: number; y: number }> = {}
     for (const item of items) {
-      const pin = map.latLngToContainerPoint(L.latLng(item.lat, item.lng))
+      const pin = map.latLngToLayerPoint(L.latLng(item.lat, item.lng))
       const { dx, dy } = spreadOffset(item.spreadCount, item.spreadIndex)
       next[item.key] = { x: pin.x + dx, y: pin.y + dy }
     }
