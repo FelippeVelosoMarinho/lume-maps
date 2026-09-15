@@ -2,6 +2,8 @@
 
 Licença permanente de viagem + mapas compartilháveis (lugares, fotos, notas).
 
+<a href="https://mapa-retrato.vercel.app/">Site hospedado</a>
+
 ## Início rápido (com os dados atuais)
 
 Leia o planner e rode o script — usa o SQLite/uploads que já estão no repo:
