@@ -64,20 +64,29 @@ export function PhotoStack({
 
 export function journeyPhotoStackUrls(journey: Journey): string[] {
   const cover = journey.cover_url ? mediaUrl(journey.cover_url) : null
-  const photos = journey.markers
-    .flatMap((m) =>
-      (m.attachments ?? [])
-        .filter((a) => a.kind === 'photo')
-        .map((a) => ({ url: a.url, primary: a.is_primary })),
-    )
-    .sort((a, b) => Number(b.primary) - Number(a.primary))
+  const seen = new Set<string>(cover ? [cover] : [])
+  const urls: string[] = cover ? [cover] : []
 
-  return [
-    ...(cover ? [cover] : []),
-    ...photos
-      .map((p) => mediaUrl(p.url))
-      .filter((u): u is string => !!u && u !== cover),
-  ]
+  const push = (raw: string | null | undefined) => {
+    const u = raw ? mediaUrl(raw) : null
+    if (!u || seen.has(u)) return
+    seen.add(u)
+    urls.push(u)
+  }
+
+  for (const m of journey.markers) {
+    const primaryAtt = (m.attachments ?? []).find((a) => a.kind === 'photo' && a.is_primary)
+    const anyPhoto = (m.attachments ?? []).find((a) => a.kind === 'photo')
+    push(m.primary_photo_url || primaryAtt?.url || anyPhoto?.url)
+  }
+
+  for (const m of journey.markers) {
+    for (const a of m.attachments ?? []) {
+      if (a.kind === 'photo' && !a.is_primary) push(a.url)
+    }
+  }
+
+  return urls
 }
 
 /** Landing de compartilhamento: chamada acima, capa em destaque. */

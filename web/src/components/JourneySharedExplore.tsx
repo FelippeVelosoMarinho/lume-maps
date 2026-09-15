@@ -51,9 +51,9 @@ export function JourneySharedExplore({
   return (
     <div className="journey-shared-page h-[100dvh] flex flex-col bg-sand/30 text-ink">
       <section className="journey-shared-invite shrink-0 overflow-y-auto border-b border-ink/15 bg-paper paper-grain safe-top">
-        <div className="max-w-3xl mx-auto px-3 sm:px-5 py-4 sm:py-5">
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center sm:items-start">
-            <div className="w-full sm:w-[min(42%,14rem)] shrink-0">
+        <div className="max-w-3xl mx-auto px-3 sm:px-5 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-5 items-center sm:items-start">
+            <div className="w-full sm:w-[min(38%,12.5rem)] shrink-0">
               {stackUrls.length > 0 ? (
                 <PhotoStack
                   urls={stackUrls}
@@ -63,15 +63,24 @@ export function JourneySharedExplore({
                       : journey.title.slice(0, 28)
                   }
                 />
+              ) : journey.markers.length > 0 ? (
+                <div className="aspect-[4/3] overflow-hidden border border-ink/15 rounded-sm shadow-md bg-sand/30">
+                  <WarmMap
+                    markers={journey.markers}
+                    pathColor={journey.color || undefined}
+                    isPlanning={!!journey.is_planning}
+                    preview
+                    className="h-full w-full"
+                  />
+                </div>
               ) : (
                 <div className="aspect-[4/3] border border-dashed border-ink/20 bg-sand/40 flex items-center justify-center text-xs text-earth/70 rounded-sm">
-                  {journey.markers.length}{' '}
-                  {journey.markers.length === 1 ? 'lugar' : 'lugares'} no caminho
+                  Sem lugares no caminho
                 </div>
               )}
             </div>
 
-            <div className="flex-1 min-w-0 w-full text-center sm:text-left space-y-2.5">
+            <div className="flex-1 min-w-0 w-full text-center sm:text-left space-y-2">
               <p className="text-[9px] uppercase tracking-[0.22em] text-stamp">Convite de viagem</p>
               <h1 className="font-display text-lg sm:text-xl leading-snug">
                 {owner ? (
@@ -86,12 +95,12 @@ export function JourneySharedExplore({
               <p className="font-display text-base text-ink/90">{journey.title}</p>
               {period && <p className="font-mono text-xs text-earth">{period}</p>}
               {journey.subtitle && (
-                <div className="text-sm text-earth max-h-20 overflow-y-auto">
+                <div className="text-sm text-earth max-h-14 overflow-y-auto">
                   <MarkdownText className="text-[13px]">{journey.subtitle}</MarkdownText>
                 </div>
               )}
 
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-0.5">
                 {canJoin ? (
                   <button
                     type="button"
@@ -126,7 +135,7 @@ export function JourneySharedExplore({
             </div>
           </div>
 
-          <div className="mt-4 flex flex-col sm:flex-row gap-4 sm:gap-6 border-t border-dashed border-ink/15 pt-4">
+          <div className="mt-3 flex flex-col sm:flex-row gap-3 sm:gap-5 border-t border-dashed border-ink/15 pt-3">
             <section className="flex-1 min-w-0">
               <p className="text-[10px] uppercase tracking-wider text-earth mb-2 flex items-center gap-1">
                 <Users size={12} /> Quem já está
@@ -195,13 +204,13 @@ export function JourneySharedExplore({
             </section>
           </div>
 
-          <p className="mt-3 text-[10px] text-earth/70 text-center sm:text-left">
+          <p className="mt-2 text-[10px] text-earth/70 text-center sm:text-left">
             Explore o mapa abaixo — clique nas cidades e nos comentários. Ao entrar, o mapa aparece no seu passaporte.
           </p>
         </div>
       </section>
 
-      <div className="relative flex-1 min-h-0">
+      <div className="journey-shared-map relative min-h-0 w-full">
         <div className="absolute top-2 left-3 z-[500] pointer-events-none">
           <span className="text-[10px] uppercase tracking-wider text-earth bg-paper/92 border border-ink/15 px-2.5 py-1 rounded-full shadow-sm">
             Mapa da viagem
@@ -217,6 +226,7 @@ export function JourneySharedExplore({
           showCommentBubbles
           authorPhotos={journeyAuthorPhotos(journey)}
           bottomPad={48}
+          className="h-full w-full"
         />
       </div>
 

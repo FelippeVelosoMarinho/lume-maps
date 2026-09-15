@@ -460,6 +460,13 @@ export const api = new ApiClient()
 
 export function mediaUrl(url: string | null | undefined) {
   if (!url) return null
-  if (url.startsWith('http')) return url
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url
+  }
+  // Uploads locais: API monta em {API_BASE}/uploads (ex.: /api/uploads/…)
+  if (url.startsWith('/uploads')) {
+    const base = API_BASE.replace(/\/$/, '')
+    return `${base}${url}`
+  }
   return url
 }
