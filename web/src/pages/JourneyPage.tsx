@@ -127,7 +127,6 @@ export function JourneyPage({ mode }: { mode: Mode }) {
         canJoin={!!me?.passport}
         joining={joining}
         onJoin={() => void handleJoinMap()}
-        onChanged={() => void load()}
       />
     )
   }

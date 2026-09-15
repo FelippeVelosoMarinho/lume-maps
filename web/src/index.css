@@ -667,6 +667,74 @@ body {
   box-shadow: 0 1px 3px rgba(26, 21, 16, 0.12);
 }
 
+.place-modal-comment {
+  border-radius: 8px;
+  border: 1px solid rgba(26, 21, 16, 0.12);
+  padding: 8px 10px;
+  background: #fffdf8;
+}
+
+.place-modal-comment__type {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--comment-accent, #5c4a3a);
+  margin-bottom: 4px;
+}
+
+.place-modal-comment__body {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #1a1510;
+}
+
+.place-modal-comment__meta {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: #5c4a3a;
+  font-family: "Caveat", cursive;
+  font-size: 13px;
+}
+
+.place-modal-comment--note {
+  --comment-accent: #9a7209;
+  background: #fff8e1;
+  border-color: #e6b422;
+}
+
+.place-modal-comment--quote {
+  --comment-accent: #5a3ea1;
+  background: #f4f0ff;
+  border-color: #7b61c7;
+}
+
+.place-modal-comment--quote .place-modal-comment__body {
+  font-family: "Libre Baskerville", serif;
+  font-style: italic;
+}
+
+.place-modal-comment--idea {
+  --comment-accent: #6a28c8;
+  background: #f3eeff;
+  border-color: #8338ec;
+}
+
+.place-modal-comment--moment {
+  --comment-accent: #b91c1c;
+  background: #fff0eb;
+  border-color: #e63946;
+}
+
+.place-modal-comment--moment .place-modal-comment__body {
+  font-family: "Caveat", cursive;
+  font-size: 14px;
+}
+
 .journey-shared-invite {
   max-height: min(46dvh, 26rem);
 }

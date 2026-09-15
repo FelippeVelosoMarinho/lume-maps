@@ -4,7 +4,7 @@ import { MapPin, Music2, Share2, Users } from 'lucide-react'
 import { journeyAuthorPhotos, mediaUrl, type Journey, type Marker } from '../lib/api'
 import { formatPeriod } from '../lib/dates'
 import { WarmMap } from './DarkMap'
-import { PlaceSheet } from './PlaceSheet'
+import { PlaceModal } from './PlaceModal'
 import { MarkdownText } from './MarkdownText'
 import { PhotoStack, journeyPhotoStackUrls } from './JourneyInviteView'
 
@@ -13,8 +13,6 @@ type Props = {
   canJoin?: boolean
   joining?: boolean
   onJoin?: () => void
-  canDeleteComments?: boolean
-  onChanged?: () => void
 }
 
 /** Convite + exibições + mapa interativo (diferente do perfil). */
@@ -23,8 +21,6 @@ export function JourneySharedExplore({
   canJoin,
   joining,
   onJoin,
-  canDeleteComments,
-  onChanged,
 }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const period = formatPeriod(journey.started_on, journey.ended_on)
@@ -32,7 +28,6 @@ export function JourneySharedExplore({
   const companions = journey.companions ?? []
   const next = encodeURIComponent(`/v/${journey.slug}`)
   const selected: Marker | undefined = journey.markers.find((m) => m.id === selectedId)
-  const sheetOpen = !!selected
   const shareUrl = `${window.location.origin}/v/${journey.slug}`
   const stackUrls = journeyPhotoStackUrls(journey)
   const playlist = journey.playlist_url?.trim() || ''
@@ -221,28 +216,22 @@ export function JourneySharedExplore({
           isPlanning={!!journey.is_planning}
           showCommentBubbles
           authorPhotos={journeyAuthorPhotos(journey)}
-          bottomPad={sheetOpen ? 220 : 48}
+          bottomPad={48}
         />
-
-        {selected && (
-          <PlaceSheet
-            key={
-              selected.id +
-              selected.annotations.length +
-              selected.attachments.map((a) => `${a.id}:${a.is_primary}`).join(',')
-            }
-            marker={selected}
-            slug={journey.slug}
-            editable={false}
-            canDeleteAnnotations={canDeleteComments}
-            expeditionLabel={journey.title}
-            expeditionDate={journey.started_on || journey.ended_on}
-            onClose={() => setSelectedId(null)}
-            onChanged={() => onChanged?.()}
-            onDeliverMap={() => void deliverMap()}
-          />
-        )}
       </div>
+
+      {selected && (
+        <PlaceModal
+          key={
+            selected.id +
+            selected.annotations.length +
+            selected.attachments.map((a) => `${a.id}:${a.is_primary}`).join(',')
+          }
+          marker={selected}
+          journey={journey}
+          onClose={() => setSelectedId(null)}
+        />
+      )}
     </div>
   )
 }
