@@ -1,5 +1,6 @@
 import ReactMarkdown from 'react-markdown'
 import rehypeSanitize from 'rehype-sanitize'
+import { autolinkMarkdown } from '../lib/markdown'
 
 type Props = {
   children: string
@@ -9,8 +10,9 @@ type Props = {
 }
 
 export function MarkdownText({ children, className = '', compact }: Props) {
-  const text = children.trim()
-  if (!text) return null
+  const raw = children.trim()
+  if (!raw) return null
+  const text = autolinkMarkdown(raw)
 
   return (
     <div
@@ -26,7 +28,7 @@ export function MarkdownText({ children, className = '', compact }: Props) {
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-stamp underline underline-offset-2 hover:brightness-110"
+              className="text-stamp underline underline-offset-2 hover:brightness-110 break-all"
               onClick={(e) => e.stopPropagation()}
             >
               {linkChildren}

@@ -60,6 +60,11 @@ async def create_tables():
             "ALTER TABLE journeys ADD COLUMN is_planning BOOLEAN DEFAULT 0",
             # Descrição do mapa (markdown) — amplia VARCHAR(300) legado
             "ALTER TABLE journeys ALTER COLUMN subtitle TYPE TEXT",
+            # Privacidade do perfil público
+            "ALTER TABLE passports ADD COLUMN public_show_journeys BOOLEAN DEFAULT 1",
+            "ALTER TABLE passports ADD COLUMN public_show_travels_map BOOLEAN DEFAULT 1",
+            "ALTER TABLE passports ADD COLUMN public_show_planning BOOLEAN DEFAULT 1",
+            "ALTER TABLE passports ADD COLUMN public_show_stamps BOOLEAN DEFAULT 1",
         ):
             try:
                 await conn.execute(text(stmt))

@@ -20,6 +20,11 @@ class Passport(Base):
     issued_at: Mapped[date] = mapped_column(Date, default=lambda: date.today())
     signature: Mapped[str] = mapped_column(String(120), default="")
     bio: Mapped[str] = mapped_column(Text, default="")
+    # Privacidade do perfil público (visitantes / sem conta) — default aberto
+    public_show_journeys: Mapped[bool] = mapped_column(Boolean, default=True)
+    public_show_travels_map: Mapped[bool] = mapped_column(Boolean, default=True)
+    public_show_planning: Mapped[bool] = mapped_column(Boolean, default=True)
+    public_show_stamps: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: utc_now_naive())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,

@@ -1,5 +1,6 @@
 import random
 import re
+import unicodedata
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -37,7 +38,7 @@ from app.schemas import (
     CompanionAdd,
     PassportSearchHit,
 )
-from app.utils.deps import get_current_user
+from app.utils.deps import get_current_user, get_optional_user
 from app.utils.storage import upload_to_supabase
 
 router = APIRouter(tags=["journeys"])
@@ -56,6 +57,7 @@ def _normalize_transport(value: str | None) -> str | None:
 JOURNEY_COLORS = [
     "#2F6F73",
     "#C45C26",
+    "#B33A3A",
     "#3D5A80",
     "#8B4513",
     "#6B4C9A",
@@ -140,17 +142,20 @@ def _require_owner(journey: Journey | None, user: User) -> Journey:
 
 
 def _slugify(text: str) -> str:
+    text = unicodedata.normalize("NFKD", text)
+    text = "".join(c for c in text if not unicodedata.combining(c))
     text = text.lower().strip()
     text = re.sub(r"[^a-z0-9\s-]", "", text)
     text = re.sub(r"[\s_-]+", "-", text)
     return text[:60] or "viagem"
 
 
-async def _unique_slug(db: AsyncSession, base: str) -> str:
+async def _unique_slug(db: AsyncSession, base: str, exclude_id: str | None = None) -> str:
     slug = _slugify(base)
     for _ in range(20):
         result = await db.execute(select(Journey).where(Journey.slug == slug))
-        if not result.scalar_one_or_none():
+        existing = result.scalar_one_or_none()
+        if not existing or (exclude_id and existing.id == exclude_id):
             return slug
         slug = f"{_slugify(base)}-{uuid.uuid4().hex[:6]}"
     return f"{slug}-{uuid.uuid4().hex[:6]}"
@@ -304,11 +309,19 @@ async def update_journey(
     payload = data.model_dump(exclude_unset=True)
     if "color" in payload:
         journey.map_color = payload.pop("color")
+    if "title" in payload:
+        new_title = (payload.get("title") or "").strip() or journey.title
+        payload["title"] = new_title
+        desired = _slugify(new_title)
+        current_base = _slugify(journey.title)
+        # Regenera slug quando o título muda (ou o slug atual não reflete o título)
+        if desired and (desired != current_base or not journey.slug.startswith(desired)):
+            journey.slug = await _unique_slug(db, new_title, exclude_id=journey.id)
     for field, value in payload.items():
         setattr(journey, field, value)
     await _sync_journey_stamps(db, journey)
     await db.commit()
-    journey = await _get_journey_full(db, slug)
+    journey = await _get_journey_full(db, journey.slug)
     color = await _color_for_journey(db, journey)
     out = _journey_out(journey)
     out.color = color
@@ -757,7 +770,11 @@ async def join_journey(
 
 
 @router.get("/passports/{username}", response_model=PassportOut)
-async def get_passport(username: str, db: AsyncSession = Depends(get_db)):
+async def get_passport(
+    username: str,
+    db: AsyncSession = Depends(get_db),
+    viewer: User | None = Depends(get_optional_user),
+):
     result = await db.execute(
         select(Passport)
         .where(Passport.username == username.lower())
@@ -769,6 +786,11 @@ async def get_passport(username: str, db: AsyncSession = Depends(get_db)):
     passport = result.scalar_one_or_none()
     if not passport:
         raise HTTPException(status_code=404, detail="Passaporte não encontrado")
+
+    is_owner = bool(viewer and viewer.id == passport.user_id)
+    show_journeys = is_owner or bool(getattr(passport, "public_show_journeys", True))
+    show_stamps = is_owner or bool(getattr(passport, "public_show_stamps", True))
+    show_planning = is_owner or bool(getattr(passport, "public_show_planning", True))
 
     journeys_result = await db.execute(
         select(Journey).where(Journey.owner_id == passport.user_id)
@@ -786,80 +808,97 @@ async def get_passport(username: str, db: AsyncSession = Depends(get_db)):
     for j in companion_journeys:
         by_id.setdefault(j.id, j)
     all_journeys = list(by_id.values())
-    public_journeys = [j for j in all_journeys if j.is_public]
+    # Dono vê todas; visitante só públicas (+ planning conforme flag)
+    visible_journeys = []
+    for j in all_journeys:
+        if not is_owner and not j.is_public:
+            continue
+        if not show_planning and bool(getattr(j, "is_planning", False)):
+            continue
+        visible_journeys.append(j)
     journey_by_id = by_id
     color_map = build_journey_color_map(all_journeys)
 
-    # Agrupa carimbos pela cidade: 1 selo por cidade; cores misturadas se em vários mapas
-    by_city: dict[str, list[Stamp]] = defaultdict(list)
-    for s in passport.stamps:
-        city = ""
-        if s.marker:
-            city = (s.marker.city or s.marker.title or "").strip().casefold()
-        if not city:
-            city = (s.label or "").strip().casefold()
-        by_city[city or s.id].append(s)
-
     stamp_outs: list[StampOut] = []
-    for stamps in by_city.values():
-        stamps_sorted = sorted(stamps, key=lambda s: _naive_utc(s.stamped_at))
-        primary = stamps_sorted[0]
-        colors: list[str] = []
-        titles: list[str] = []
-        started_dates = []
-        ended_dates = []
-        photo = None
-        slug = None
-        for s in stamps_sorted:
+    if show_stamps:
+        by_city: dict[str, list[Stamp]] = defaultdict(list)
+        for s in passport.stamps:
             j = journey_by_id.get(s.journey_id)
-            c = color_map.get(s.journey_id)
-            if c and c not in colors:
-                colors.append(c)
-            if j:
-                if j.title and j.title not in titles:
-                    titles.append(j.title)
-                if j.started_on:
-                    started_dates.append(j.started_on)
-                if j.ended_on:
-                    ended_dates.append(j.ended_on)
-                if slug is None:
-                    slug = j.slug
-            if not photo and s.marker:
-                photo = _primary_photo_url(s.marker)
+            if not is_owner and j and not j.is_public:
+                continue
+            if not show_planning and j and bool(getattr(j, "is_planning", False)):
+                continue
+            city = ""
+            if s.marker:
+                city = (s.marker.city or s.marker.title or "").strip().casefold()
+            if not city:
+                city = (s.label or "").strip().casefold()
+            by_city[city or s.id].append(s)
 
-        so = StampOut(
-            id=primary.id,
-            label=(primary.marker.title if primary.marker else None) or primary.label,
-            rotation=primary.rotation,
-            stamped_at=primary.stamped_at,
-            marker_id=primary.marker_id,
-            journey_id=primary.journey_id,
-            journey_slug=slug,
-            journey_title=titles[0] if len(titles) == 1 else (" · ".join(titles) if titles else None),
-            journey_started_on=min(started_dates) if started_dates else None,
-            journey_ended_on=max(ended_dates) if ended_dates else None,
-            primary_photo_url=photo,
-            colors=colors,
-            journey_titles=titles,
-        )
-        stamp_outs.append(so)
+        for stamps in by_city.values():
+            stamps_sorted = sorted(stamps, key=lambda s: _naive_utc(s.stamped_at))
+            primary = stamps_sorted[0]
+            colors: list[str] = []
+            titles: list[str] = []
+            started_dates = []
+            ended_dates = []
+            photo = None
+            slug = None
+            for s in stamps_sorted:
+                j = journey_by_id.get(s.journey_id)
+                c = color_map.get(s.journey_id)
+                if c and c not in colors:
+                    colors.append(c)
+                if j:
+                    if j.title and j.title not in titles:
+                        titles.append(j.title)
+                    if j.started_on:
+                        started_dates.append(j.started_on)
+                    if j.ended_on:
+                        ended_dates.append(j.ended_on)
+                    if slug is None:
+                        slug = j.slug
+                if not photo and s.marker:
+                    photo = _primary_photo_url(s.marker)
 
-    stamp_outs.sort(key=lambda s: _naive_utc(s.stamped_at))
+            so = StampOut(
+                id=primary.id,
+                label=(primary.marker.title if primary.marker else None) or primary.label,
+                rotation=primary.rotation,
+                stamped_at=primary.stamped_at,
+                marker_id=primary.marker_id,
+                journey_id=primary.journey_id,
+                journey_slug=slug,
+                journey_title=titles[0] if len(titles) == 1 else (" · ".join(titles) if titles else None),
+                journey_started_on=min(started_dates) if started_dates else None,
+                journey_ended_on=max(ended_dates) if ended_dates else None,
+                primary_photo_url=photo,
+                colors=colors,
+                journey_titles=titles,
+            )
+            stamp_outs.append(so)
+
+        stamp_outs.sort(key=lambda s: _naive_utc(s.stamped_at))
 
     pout = PassportOut.model_validate(passport)
     pout.stamps = stamp_outs
     journey_summaries: list[JourneySummary] = []
-    for j in public_journeys:
-        js = JourneySummary.model_validate(j)
-        js.color = color_map.get(j.id)
-        js.is_mine = j.owner_id == passport.user_id
-        journey_summaries.append(js)
+    if show_journeys:
+        for j in visible_journeys:
+            js = JourneySummary.model_validate(j)
+            js.color = color_map.get(j.id)
+            js.is_mine = j.owner_id == passport.user_id
+            journey_summaries.append(js)
     pout.journeys = journey_summaries
     return pout
 
 
 @router.get("/passports/{username}/travels", response_model=PassportTravelsOut)
-async def get_passport_travels(username: str, db: AsyncSession = Depends(get_db)):
+async def get_passport_travels(
+    username: str,
+    db: AsyncSession = Depends(get_db),
+    viewer: User | None = Depends(get_optional_user),
+):
     result = await db.execute(
         select(Passport).where(Passport.username == username.lower())
     )
@@ -867,33 +906,48 @@ async def get_passport_travels(username: str, db: AsyncSession = Depends(get_db)
     if not passport:
         raise HTTPException(status_code=404, detail="Passaporte não encontrado")
 
-    journeys_result = await db.execute(
-        select(Journey)
-        .where(Journey.owner_id == passport.user_id, Journey.is_public == True)  # noqa: E712
-        .options(
-            selectinload(Journey.markers).selectinload(Marker.attachments),
+    is_owner = bool(viewer and viewer.id == passport.user_id)
+    show_map = is_owner or bool(getattr(passport, "public_show_travels_map", True))
+    show_planning = is_owner or bool(getattr(passport, "public_show_planning", True))
+
+    if not show_map:
+        return PassportTravelsOut(
+            username=passport.username,
+            display_name=passport.display_name,
+            journeys=[],
         )
-        .order_by(Journey.created_at)
+
+    owned_q = select(Journey).where(Journey.owner_id == passport.user_id)
+    if not is_owner:
+        owned_q = owned_q.where(Journey.is_public == True)  # noqa: E712
+    journeys_result = await db.execute(
+        owned_q.options(
+            selectinload(Journey.markers).selectinload(Marker.attachments),
+        ).order_by(Journey.created_at)
     )
     owned = list(journeys_result.scalars().all())
 
-    companion_result = await db.execute(
+    companion_q = (
         select(Journey)
         .join(JourneyCompanion, JourneyCompanion.journey_id == Journey.id)
-        .where(
-            JourneyCompanion.user_id == passport.user_id,
-            Journey.is_public == True,  # noqa: E712
-        )
-        .options(
+        .where(JourneyCompanion.user_id == passport.user_id)
+    )
+    if not is_owner:
+        companion_q = companion_q.where(Journey.is_public == True)  # noqa: E712
+    companion_result = await db.execute(
+        companion_q.options(
             selectinload(Journey.markers).selectinload(Marker.attachments),
-        )
-        .order_by(Journey.created_at)
+        ).order_by(Journey.created_at)
     )
     companion = list(companion_result.scalars().all())
     by_id: dict[str, Journey] = {j.id: j for j in owned}
     for j in companion:
         by_id.setdefault(j.id, j)
-    journeys = list(by_id.values())
+    journeys = [
+        j
+        for j in by_id.values()
+        if show_planning or not bool(getattr(j, "is_planning", False))
+    ]
 
     # Cores alinhadas com o passaporte (próprias + mapas em que participa)
     all_ids = list(by_id.keys())

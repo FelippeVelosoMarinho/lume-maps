@@ -688,6 +688,7 @@ body {
   background: var(--color-cream);
   box-shadow: none;
   font-family: var(--font-sans);
+  color: var(--color-ink);
 }
 .markdown-field .w-md-editor-toolbar {
   background: color-mix(in srgb, var(--color-sand) 35%, var(--color-cream));
@@ -699,18 +700,36 @@ body {
   height: 28px;
   width: 28px;
 }
-.markdown-field .w-md-editor-toolbar li > button:hover {
+.markdown-field .w-md-editor-toolbar li > button:hover,
+.markdown-field .w-md-editor-toolbar li > button.active {
   background: var(--color-sand) !important;
   color: var(--color-ink) !important;
 }
-.markdown-field .w-md-editor-content,
-.markdown-field .w-md-editor-text-pre,
-.markdown-field .w-md-editor-text-input,
-.markdown-field .w-md-editor-text {
+.markdown-field .w-md-editor-content {
   background: var(--color-cream) !important;
+}
+/* Camada de highlight (pre) — texto visível */
+.markdown-field .w-md-editor-text-pre,
+.markdown-field .w-md-editor-text-pre > code,
+.markdown-field .w-md-editor-text .token {
   color: var(--color-ink) !important;
+  background: transparent !important;
   font-size: 0.875rem !important;
   line-height: 1.45 !important;
+  font-family: var(--font-sans) !important;
+}
+/* Textarea por cima: caret visível, texto transparente (padrão do editor) */
+.markdown-field .w-md-editor-text-input {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  caret-color: var(--color-ink) !important;
+  font-size: 0.875rem !important;
+  line-height: 1.45 !important;
+  font-family: var(--font-sans) !important;
+}
+.markdown-field .w-md-editor-text-input::placeholder {
+  color: color-mix(in srgb, var(--color-earth) 55%, transparent) !important;
+  -webkit-text-fill-color: color-mix(in srgb, var(--color-earth) 55%, transparent) !important;
 }
 .markdown-field .w-md-editor-preview {
   background: var(--color-cream) !important;
@@ -721,8 +740,16 @@ body {
   font-size: 0.875rem !important;
   color: var(--color-earth) !important;
 }
+.markdown-field .wmde-markdown a {
+  color: var(--color-stamp) !important;
+}
 .markdown-field .w-md-editor-bar {
   display: none;
+}
+.markdown-body a {
+  color: var(--color-stamp);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 .markdown-body--compact p {
   margin-bottom: 0.25rem;

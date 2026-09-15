@@ -47,6 +47,10 @@ export type Passport = {
   issued_at: string
   signature: string
   bio: string
+  public_show_journeys?: boolean
+  public_show_travels_map?: boolean
+  public_show_planning?: boolean
+  public_show_stamps?: boolean
   stamps: Stamp[]
   journeys: JourneySummary[]
 }
@@ -157,6 +161,7 @@ export type Journey = {
 export const JOURNEY_COLOR_PALETTE = [
   '#2F6F73',
   '#C45C26',
+  '#B33A3A',
   '#3D5A80',
   '#8B4513',
   '#6B4C9A',

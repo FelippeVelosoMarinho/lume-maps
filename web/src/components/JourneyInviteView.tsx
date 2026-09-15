@@ -109,9 +109,11 @@ export function JourneyInviteView({ journey }: Props) {
             {journey.title}
           </p>
           {(journey.subtitle || period) && (
-            <div className="text-sm text-earth max-w-md leading-snug space-y-1">
-              {journey.subtitle ? <MarkdownText>{journey.subtitle}</MarkdownText> : null}
-              {period && <p className="font-mono text-xs">{period}</p>}
+            <div className="text-sm text-earth max-w-lg leading-snug space-y-2 text-left w-full px-1">
+              {journey.subtitle ? (
+                <MarkdownText className="text-[13px] sm:text-sm">{journey.subtitle}</MarkdownText>
+              ) : null}
+              {period && <p className="font-mono text-xs text-center sm:text-left">{period}</p>}
             </div>
           )}
           <div className="pt-1 flex flex-col items-center gap-1.5">

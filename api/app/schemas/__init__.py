@@ -33,6 +33,10 @@ class PassportUpdate(BaseModel):
     place_of_issue: str | None = None
     signature: str | None = None
     bio: str | None = None
+    public_show_journeys: bool | None = None
+    public_show_travels_map: bool | None = None
+    public_show_planning: bool | None = None
+    public_show_stamps: bool | None = None
 
 
 class StampOut(BaseModel):
@@ -81,6 +85,10 @@ class PassportOut(BaseModel):
     issued_at: date
     signature: str
     bio: str
+    public_show_journeys: bool = True
+    public_show_travels_map: bool = True
+    public_show_planning: bool = True
+    public_show_stamps: bool = True
     stamps: list[StampOut] = []
     journeys: list[JourneySummary] = []
 

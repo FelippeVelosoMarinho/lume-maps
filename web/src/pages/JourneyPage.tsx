@@ -360,8 +360,16 @@ export function JourneyPage({ mode }: { mode: Mode }) {
               isOwner={isOwner}
               onSelectPlace={selectPlace}
               onChanged={async (j) => {
-                if (j) setJourney(j)
-                else await load()
+                if (j) {
+                  setJourney(j)
+                  if (j.slug && j.slug !== slug) {
+                    setMenuOpen(false)
+                    navigate(`/v/${j.slug}/edit`, { replace: true })
+                    return
+                  }
+                } else {
+                  await load()
+                }
               }}
             />
           </>
