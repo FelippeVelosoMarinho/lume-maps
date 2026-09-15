@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Share2, Users } from 'lucide-react'
-import type { Journey, Marker } from '../lib/api'
+import { journeyAuthorPhotos, type Journey, type Marker } from '../lib/api'
 import { formatPeriod } from '../lib/dates'
 import { WarmMap } from './DarkMap'
 import { PlaceSheet } from './PlaceSheet'
@@ -123,6 +123,7 @@ export function JourneySharedExplore({
           pathColor={journey.color || undefined}
           isPlanning={!!journey.is_planning}
           showCommentBubbles
+          authorPhotos={journeyAuthorPhotos(journey)}
           bottomPad={sheetOpen ? 220 : 48}
         />
 

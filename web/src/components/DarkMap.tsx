@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react'
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import type { Marker as MarkerType } from '../lib/api'
+import { JOURNEY_COLOR_PALETTE } from '../lib/api'
 import { PLANNING_MAP_OPACITY } from '../lib/planningMaps'
 import { CARTO_ATTRIBUTION, cartoVoyagerTileUrl } from '../lib/mapTiles'
 import { MapPathLegs } from './MapPathLegs'
@@ -73,6 +74,8 @@ type Props = {
   preview?: boolean
   /** Balões de comentário acima dos pins (só mapa de viagem) */
   showCommentBubbles?: boolean
+  /** Avatares dos autores (@username → foto) */
+  authorPhotos?: Record<string, string | null | undefined>
 }
 
 export function WarmMap({
@@ -87,6 +90,7 @@ export function WarmMap({
   bottomPad = 0,
   preview = false,
   showCommentBubbles = false,
+  authorPhotos,
 }: Props) {
   const ordered = useMemo(
     () => [...markers].sort((a, b) => a.sort_order - b.sort_order),
@@ -98,7 +102,7 @@ export function WarmMap({
     return [-21.5, -43.5]
   }, [ordered])
 
-  const lineColor = pathColor || '#2F6F73'
+  const lineColor = pathColor || JOURNEY_COLOR_PALETTE[0]
 
   return (
     <div className={className ?? 'h-full w-full'}>
@@ -124,7 +128,12 @@ export function WarmMap({
         {!preview && <FlyTo target={flyTo} />}
         {onMapClick && !preview && <ClickHandler onClick={onMapClick} />}
         {showCommentBubbles && !preview && (
-          <MapCommentBubbles markers={ordered} selectedId={selectedId} onSelect={onSelect} />
+          <MapCommentBubbles
+            markers={ordered}
+            selectedId={selectedId}
+            onSelect={onSelect}
+            authorPhotos={authorPhotos}
+          />
         )}
         {ordered.map((m, i) => (
           <Marker

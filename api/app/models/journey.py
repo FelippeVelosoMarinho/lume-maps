@@ -120,6 +120,7 @@ class Annotation(Base):
     body: Mapped[str] = mapped_column(Text, nullable=False)
     author_name: Mapped[str] = mapped_column(String(120), default="")
     author_username: Mapped[str] = mapped_column(String(50), default="")
+    author_photo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: utc_now_naive())
 

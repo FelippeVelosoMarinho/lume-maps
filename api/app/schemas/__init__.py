@@ -113,6 +113,7 @@ class AnnotationOut(BaseModel):
     body: str
     author_name: str = ""
     author_username: str = ""
+    author_photo_url: str | None = None
     sort_order: int
     created_at: datetime | None = None
 
@@ -246,6 +247,7 @@ class JourneyOut(BaseModel):
     color: str | None = None
     owner_username: str | None = None
     owner_display_name: str | None = None
+    owner_photo_url: str | None = None
     markers: list[MarkerOut] = []
     companions: list[CompanionOut] = []
 

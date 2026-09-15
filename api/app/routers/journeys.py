@@ -55,15 +55,18 @@ def _normalize_transport(value: str | None) -> str | None:
     return key
 
 JOURNEY_COLORS = [
-    "#2F6F73",
-    "#C45C26",
-    "#B33A3A",
-    "#3D5A80",
-    "#8B4513",
-    "#6B4C9A",
-    "#B8860B",
-    "#2E8B57",
-    "#A0522D",
+    "#E63946",
+    "#0077B6",
+    "#F77F00",
+    "#06AED5",
+    "#7209B7",
+    "#D90429",
+    "#FB8500",
+    "#2DC653",
+    "#FF006E",
+    "#118AB2",
+    "#8338EC",
+    "#EF476F",
 ]
 
 
@@ -181,9 +184,11 @@ async def _get_journey_full(db: AsyncSession, slug: str) -> Journey | None:
 def _journey_out(journey: Journey, color_map: dict[str, str] | None = None) -> JourneyOut:
     owner_username = None
     owner_display = None
+    owner_photo = None
     if journey.owner and journey.owner.passport:
         owner_username = journey.owner.passport.username
         owner_display = journey.owner.passport.display_name
+        owner_photo = journey.owner.passport.photo_url
     data = JourneyOut(
         id=journey.id,
         slug=journey.slug,
@@ -198,6 +203,7 @@ def _journey_out(journey: Journey, color_map: dict[str, str] | None = None) -> J
         color=None,
         owner_username=owner_username,
         owner_display_name=owner_display,
+        owner_photo_url=owner_photo,
         markers=[_marker_out(m) for m in (journey.markers or [])],
         companions=[],
     )
@@ -498,6 +504,7 @@ async def add_annotation(
         body=data.body,
         author_name=(user.passport.display_name if user.passport else "") or "",
         author_username=(user.passport.username if user.passport else "") or "",
+        author_photo_url=(user.passport.photo_url if user.passport else None),
         sort_order=data.sort_order or len(marker.annotations),
     )
     db.add(ann)

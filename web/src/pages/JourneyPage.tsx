@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { MoreHorizontal, Share2 } from 'lucide-react'
-import { api, type Journey, type Marker } from '../lib/api'
+import { api, journeyAuthorPhotos, type Journey, type Marker } from '../lib/api'
 import { formatPeriod } from '../lib/dates'
 import { stripMarkdown } from '../lib/markdown'
 import { toast } from '../lib/notify'
@@ -280,6 +280,7 @@ export function JourneyPage({ mode }: { mode: Mode }) {
           pathColor={journey.color || undefined}
           isPlanning={!!journey.is_planning}
           showCommentBubbles
+          authorPhotos={journeyAuthorPhotos(journey)}
           bottomPad={sheetOpen ? 220 : 48}
         />
 

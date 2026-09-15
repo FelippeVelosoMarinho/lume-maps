@@ -67,6 +67,7 @@ export type Annotation = {
   body: string
   author_name?: string
   author_username?: string
+  author_photo_url?: string | null
   sort_order: number
   created_at?: string | null
 }
@@ -154,21 +155,37 @@ export type Journey = {
   color?: string | null
   owner_username: string | null
   owner_display_name: string | null
+  owner_photo_url?: string | null
   markers: Marker[]
   companions?: Companion[]
 }
 
 export const JOURNEY_COLOR_PALETTE = [
-  '#2F6F73',
-  '#C45C26',
-  '#B33A3A',
-  '#3D5A80',
-  '#8B4513',
-  '#6B4C9A',
-  '#B8860B',
-  '#2E8B57',
-  '#A0522D',
+  '#E63946',
+  '#0077B6',
+  '#F77F00',
+  '#06AED5',
+  '#7209B7',
+  '#D90429',
+  '#FB8500',
+  '#2DC653',
+  '#FF006E',
+  '#118AB2',
+  '#8338EC',
+  '#EF476F',
 ]
+
+/** Fotos de perfil dos participantes do mapa, indexadas por @username */
+export function journeyAuthorPhotos(journey: Journey): Record<string, string | null> {
+  const out: Record<string, string | null> = {}
+  if (journey.owner_username) {
+    out[journey.owner_username] = journey.owner_photo_url ?? null
+  }
+  for (const c of journey.companions ?? []) {
+    out[c.username] = c.photo_url
+  }
+  return out
+}
 
 /** Em produção na Vercel, aponte para a API hospedada separadamente (ex.: Railway). */
 const API_BASE = import.meta.env.VITE_API_BASE ?? '/api'
