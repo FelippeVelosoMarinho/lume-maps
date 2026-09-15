@@ -3,6 +3,7 @@ import { Music2, Users } from 'lucide-react'
 import type { Journey } from '../lib/api'
 import { mediaUrl } from '../lib/api'
 import { formatPeriod } from '../lib/dates'
+import { MarkdownText } from './MarkdownText'
 import { WarmMap } from './DarkMap'
 
 type Props = {
@@ -108,11 +109,10 @@ export function JourneyInviteView({ journey }: Props) {
             {journey.title}
           </p>
           {(journey.subtitle || period) && (
-            <p className="text-sm text-earth max-w-md leading-snug">
-              {journey.subtitle}
-              {journey.subtitle && period ? ' · ' : ''}
-              {period && <span className="font-mono text-xs">{period}</span>}
-            </p>
+            <div className="text-sm text-earth max-w-md leading-snug space-y-1">
+              {journey.subtitle ? <MarkdownText>{journey.subtitle}</MarkdownText> : null}
+              {period && <p className="font-mono text-xs">{period}</p>}
+            </div>
           )}
           <div className="pt-1 flex flex-col items-center gap-1.5">
             <Link

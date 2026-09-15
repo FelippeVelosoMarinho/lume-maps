@@ -9,6 +9,7 @@ import {
   type PassportSearchHit,
 } from '../lib/api'
 import { AnalogPhoto } from './AnalogPhoto'
+import { MarkdownField } from './MarkdownField'
 
 type Props = {
   open: boolean
@@ -216,16 +217,15 @@ export function JourneyEditMenu({
                 className="mt-1 w-full border border-dashed border-ink/30 bg-cream px-3 py-2 text-sm outline-none focus:border-earth"
               />
             </label>
-            <label className="block text-sm">
+            <div className="block text-sm">
               <span className="text-[11px] uppercase text-earth">Descrição</span>
-              <input
+              <MarkdownField
                 value={subtitle}
-                onChange={(e) => setSubtitle(e.target.value)}
-                maxLength={300}
-                placeholder="Breve descrição da viagem"
-                className="mt-1 w-full border border-dashed border-ink/30 bg-cream px-3 py-2 text-sm outline-none focus:border-earth"
+                onChange={setSubtitle}
+                height={140}
+                placeholder="Descreva a viagem com **negrito**, _itálico_ e [links](https://…)"
               />
-            </label>
+            </div>
             {isOwner && (
               <label className="flex items-start gap-2 text-sm cursor-pointer">
                 <input

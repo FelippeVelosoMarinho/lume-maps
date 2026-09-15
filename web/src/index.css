@@ -680,3 +680,53 @@ body {
   line-height: 1;
   box-shadow: 0 1px 3px rgba(26, 21, 16, 0.2);
 }
+
+/* Editor markdown (descrição do mapa) */
+.markdown-field .w-md-editor {
+  border: 1px dashed rgba(26, 21, 16, 0.3);
+  border-radius: 0;
+  background: var(--color-cream);
+  box-shadow: none;
+  font-family: var(--font-sans);
+}
+.markdown-field .w-md-editor-toolbar {
+  background: color-mix(in srgb, var(--color-sand) 35%, var(--color-cream));
+  border-bottom: 1px dashed rgba(26, 21, 16, 0.2);
+  padding: 4px 6px;
+}
+.markdown-field .w-md-editor-toolbar li > button {
+  color: var(--color-earth) !important;
+  height: 28px;
+  width: 28px;
+}
+.markdown-field .w-md-editor-toolbar li > button:hover {
+  background: var(--color-sand) !important;
+  color: var(--color-ink) !important;
+}
+.markdown-field .w-md-editor-content,
+.markdown-field .w-md-editor-text-pre,
+.markdown-field .w-md-editor-text-input,
+.markdown-field .w-md-editor-text {
+  background: var(--color-cream) !important;
+  color: var(--color-ink) !important;
+  font-size: 0.875rem !important;
+  line-height: 1.45 !important;
+}
+.markdown-field .w-md-editor-preview {
+  background: var(--color-cream) !important;
+  box-shadow: inset 1px 0 0 rgba(26, 21, 16, 0.12);
+}
+.markdown-field .wmde-markdown {
+  background: transparent !important;
+  font-size: 0.875rem !important;
+  color: var(--color-earth) !important;
+}
+.markdown-field .w-md-editor-bar {
+  display: none;
+}
+.markdown-body--compact p {
+  margin-bottom: 0.25rem;
+}
+.markdown-body--compact p:last-child {
+  margin-bottom: 0;
+}

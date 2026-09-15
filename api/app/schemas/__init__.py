@@ -185,7 +185,7 @@ class MarkerOut(BaseModel):
 
 class JourneyCreate(BaseModel):
     title: str
-    subtitle: str = ""
+    subtitle: str = Field(default="", max_length=4000)
     playlist_url: str | None = None
     started_on: date | None = None
     ended_on: date | None = None
@@ -195,7 +195,7 @@ class JourneyCreate(BaseModel):
 
 class JourneyUpdate(BaseModel):
     title: str | None = None
-    subtitle: str | None = None
+    subtitle: str | None = Field(default=None, max_length=4000)
     cover_url: str | None = None
     playlist_url: str | None = None
     started_on: date | None = None

@@ -58,6 +58,8 @@ async def create_tables():
             "ALTER TABLE markers ADD COLUMN is_departure BOOLEAN DEFAULT 0",
             "ALTER TABLE markers ADD COLUMN transport VARCHAR(20)",
             "ALTER TABLE journeys ADD COLUMN is_planning BOOLEAN DEFAULT 0",
+            # Descrição do mapa (markdown) — amplia VARCHAR(300) legado
+            "ALTER TABLE journeys ALTER COLUMN subtitle TYPE TEXT",
         ):
             try:
                 await conn.execute(text(stmt))

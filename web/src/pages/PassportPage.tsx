@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Share2, Trash2 } from 'lucide-react'
 import { api, type Passport, type PassportTravels } from '../lib/api'
 import { formatPeriod } from '../lib/dates'
+import { stripMarkdown } from '../lib/markdown'
 import { toast } from '../lib/notify'
 import { useAuth } from '../contexts/AuthContext'
 import { Shell } from '../components/Shell'
@@ -319,7 +320,7 @@ export function PassportPage() {
                         )}
                       </p>
                       <p className="text-sm text-earth mt-1 line-clamp-2">
-                        {j.subtitle || 'Sem descrição'}
+                        {j.subtitle ? stripMarkdown(j.subtitle) || 'Sem descrição' : 'Sem descrição'}
                       </p>
                       {formatPeriod(j.started_on, j.ended_on) && (
                         <p className="text-xs font-mono text-stamp mt-1">

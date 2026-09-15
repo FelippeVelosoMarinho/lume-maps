@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { Shell } from '../components/Shell'
+import { MarkdownField } from '../components/MarkdownField'
 
 type MapKind = 'memory' | 'planning'
 
@@ -12,6 +13,7 @@ export function NewJourneyPage() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [kind, setKind] = useState<MapKind>('memory')
+  const [subtitle, setSubtitle] = useState('')
 
   if (!loading && !me) return <Navigate to="/auth" replace />
 
@@ -31,7 +33,7 @@ export function NewJourneyPage() {
     try {
       const j = await api.createJourney({
         title: String(fd.get('title')),
-        subtitle: String(fd.get('subtitle') || ''),
+        subtitle: subtitle.trim(),
         playlist_url: String(fd.get('playlist_url') || '') || undefined,
         started_on: started,
         ended_on: ended,
@@ -101,10 +103,16 @@ export function NewJourneyPage() {
                 className="mt-1 w-full border border-dashed border-ink/30 bg-cream/70 px-3 py-2"
               />
             </label>
-            <label className="block text-sm">
+            <div className="block text-sm">
               <span className="text-[11px] uppercase text-earth">Descrição</span>
-              <input name="subtitle" className="mt-1 w-full border border-dashed border-ink/30 bg-cream/70 px-3 py-2" />
-            </label>
+              <MarkdownField
+                value={subtitle}
+                onChange={setSubtitle}
+                placeholder={
+                  'Planejamento da viagem para **Pedra Redonda**\n\nTrilha em [Camanducaia](https://monteverde.org.br/trilha-pedra-redonda/) e Expoflora em [Holambra](https://www.expofloratickets.com.br/natal-by-expoflora)'
+                }
+              />
+            </div>
             <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <legend className="text-[11px] uppercase text-earth col-span-full">
                 {kind === 'planning' ? 'Período previsto (opcional)' : 'Período da viagem'}

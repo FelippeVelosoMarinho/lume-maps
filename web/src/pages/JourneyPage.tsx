@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { MoreHorizontal, Share2 } from 'lucide-react'
 import { api, type Journey, type Marker } from '../lib/api'
 import { formatPeriod } from '../lib/dates'
+import { stripMarkdown } from '../lib/markdown'
 import { toast } from '../lib/notify'
 import { useAuth } from '../contexts/AuthContext'
 import { WarmMap } from '../components/DarkMap'
@@ -45,7 +46,7 @@ export function JourneyPage({ mode }: { mode: Mode }) {
   useEffect(() => {
     if (!journey) return
     document.title = `${journey.title} — Lume Maps`
-    const desc = journey.subtitle || `Mapa: ${journey.title}`
+    const desc = stripMarkdown(journey.subtitle || '') || `Mapa: ${journey.title}`
     let meta = document.querySelector('meta[name="description"]')
     if (!meta) {
       meta = document.createElement('meta')
@@ -190,7 +191,7 @@ export function JourneyPage({ mode }: { mode: Mode }) {
           title: journey?.title,
           text: journey?.owner_username
             ? `${journey.owner_username} te chama pra essa viagem no Lume Maps`
-            : journey?.subtitle || 'Veja o mapa desta viagem',
+            : stripMarkdown(journey?.subtitle || '') || 'Veja o mapa desta viagem',
           url: shareUrl,
         })
         return

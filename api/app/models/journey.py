@@ -38,7 +38,7 @@ class Journey(Base):
     owner_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     slug: Mapped[str] = mapped_column(String(80), unique=True, nullable=False, index=True)
     title: Mapped[str] = mapped_column(String(150), nullable=False)
-    subtitle: Mapped[str] = mapped_column(String(300), default="")
+    subtitle: Mapped[str] = mapped_column(Text, default="")
     cover_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     playlist_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     map_color: Mapped[str | None] = mapped_column(String(20), nullable=True)
