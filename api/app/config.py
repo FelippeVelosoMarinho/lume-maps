@@ -39,7 +39,8 @@ class Settings(BaseSettings):
         explicit = os.getenv("RUN_MIGRATIONS")
         if explicit is not None:
             return explicit.lower() in ("1", "true", "yes")
-        return not self.is_serverless
+        # Vercel/serverless também precisa aplicar migrações leves (ADD COLUMN idempotente)
+        return True
 
 
 @lru_cache()
