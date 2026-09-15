@@ -667,6 +667,64 @@ body {
   box-shadow: 0 1px 3px rgba(26, 21, 16, 0.12);
 }
 
+.map-comment-bubble {
+  pointer-events: auto;
+  cursor: pointer;
+  filter: drop-shadow(0 2px 6px rgba(26, 21, 16, 0.18));
+}
+
+.map-comment-bubble__inner {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  background: #f7f1e6;
+  border: 1px solid rgba(26, 21, 16, 0.22);
+  border-radius: 10px 10px 10px 4px;
+  padding: 6px 8px;
+  max-width: 168px;
+}
+
+.map-comment-bubble__photo {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid rgba(26, 21, 16, 0.15);
+}
+
+.map-comment-bubble__body {
+  min-width: 0;
+  flex: 1;
+}
+
+.map-comment-bubble__text {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.35;
+  color: #1a1510;
+  font-style: italic;
+}
+
+.map-comment-bubble__meta {
+  margin: 3px 0 0;
+  font-size: 8px;
+  color: #5c4a3a;
+  font-family: "Caveat", cursive;
+  line-height: 1.1;
+}
+
+.map-comment-bubble__tail {
+  width: 0;
+  height: 0;
+  margin: 0 auto;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 8px solid #f7f1e6;
+  filter: drop-shadow(0 1px 0 rgba(26, 21, 16, 0.15));
+}
+
 .transport-leg-icon {
   width: 26px;
   height: 26px;

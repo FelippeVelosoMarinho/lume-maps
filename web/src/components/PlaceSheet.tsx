@@ -16,6 +16,12 @@ export const MAX_PHOTOS = 10
 type Props = {
   marker: Marker
   editable?: boolean
+  /** Excluir anotações (dono/companheiro) mesmo fora do modo edição completa */
+  canDeleteAnnotations?: boolean
+  /** Dono do mapa — pode apagar qualquer comentário */
+  isMapOwner?: boolean
+  /** Username logado — companheiro apaga só os próprios */
+  meUsername?: string
   slug: string
   expeditionLabel?: string
   expeditionDate?: string | null
@@ -27,6 +33,9 @@ type Props = {
 export function PlaceSheet({
   marker,
   editable,
+  canDeleteAnnotations,
+  isMapOwner,
+  meUsername,
   slug,
   expeditionLabel,
   expeditionDate,
@@ -34,6 +43,15 @@ export function PlaceSheet({
   onChanged,
   onDeliverMap,
 }: Props) {
+  const allowDeleteAnn = canDeleteAnnotations ?? editable
+
+  function canDeleteAnnotation(a: { author_username?: string }) {
+    if (!allowDeleteAnn) return false
+    if (isMapOwner) return true
+    const author = (a.author_username || '').trim()
+    const me = (meUsername || '').trim()
+    return !!author && !!me && author === me
+  }
   const [subtitle, setSubtitle] = useState(marker.subtitle)
   const [note, setNote] = useState(marker.note)
   const [annType, setAnnType] = useState('note')
@@ -289,8 +307,11 @@ export function PlaceSheet({
 
             <section>
               <h3 className="text-[11px] uppercase tracking-wider text-earth mb-2 flex items-center gap-1">
-                <Lightbulb size={14} /> Anotações pessoais
+                <Lightbulb size={14} /> Comentários
               </h3>
+              {marker.annotations.length === 0 && !editable && (
+                <p className="text-sm text-earth/70">Nenhum comentário neste lugar.</p>
+              )}
               <ul className="space-y-3">
                 {marker.annotations.map((a) => {
                   const when = a.created_at
@@ -308,11 +329,16 @@ export function PlaceSheet({
                           <span className="text-[10px] uppercase text-stamp mr-2">{a.type}</span>
                           <span className="italic text-ink/90">“{a.body}”</span>
                         </span>
-                        {editable && (
+                        {canDeleteAnnotation(a) && (
                           <button
                             type="button"
                             className="text-earth/50 hover:text-earth shrink-0"
-                            onClick={() => void api.deleteAnnotation(slug, marker.id, a.id).then(onChanged)}
+                            aria-label="Excluir comentário"
+                            onClick={() => {
+                              if (confirm('Excluir este comentário?')) {
+                                void api.deleteAnnotation(slug, marker.id, a.id).then(onChanged)
+                              }
+                            }}
                           >
                             <Trash2 size={14} />
                           </button>
@@ -322,6 +348,12 @@ export function PlaceSheet({
                         <p className="mt-1.5 text-[11px] text-earth font-script text-base leading-none">
                           — {who || 'viajante'}
                           {when ? `, ${when}` : ''}
+                          {expeditionLabel && (
+                            <span className="text-earth/60 font-sans text-[10px] not-italic">
+                              {' '}
+                              · {expeditionLabel}
+                            </span>
+                          )}
                         </p>
                       )}
                     </li>
@@ -399,19 +431,43 @@ export function PlaceSheet({
               )}
             </section>
 
+            {(editable || marker.note) && (
+              <section>
+                <h3 className="text-[11px] uppercase tracking-wider text-earth mb-2">Observação</h3>
+                {editable ? (
+                  <textarea
+                    className="w-full border border-dashed border-ink/30 bg-cream/60 p-2 text-sm outline-none"
+                    rows={2}
+                    placeholder="Observação sobre este lugar…"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    onBlur={() => void saveMeta()}
+                  />
+                ) : (
+                  <p className="text-sm text-ink/90 whitespace-pre-wrap">{marker.note}</p>
+                )}
+                {editable && note.trim() && (
+                  <button
+                    type="button"
+                    className="mt-2 text-xs text-earth/70 hover:text-red-800 inline-flex items-center gap-1"
+                    onClick={() => {
+                      if (confirm('Apagar esta observação?')) {
+                        setNote('')
+                        void api.updateMarker(slug, marker.id, { note: '' }).then(onChanged)
+                      }
+                    }}
+                  >
+                    <Trash2 size={12} /> Apagar observação
+                  </button>
+                )}
+              </section>
+            )}
+
             {editable && (
               <section>
-                <h3 className="text-[11px] uppercase tracking-wider text-earth mb-2">Nota</h3>
-                <textarea
-                  className="w-full border border-dashed border-ink/30 bg-cream/60 p-2 text-sm outline-none"
-                  rows={2}
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  onBlur={() => void saveMeta()}
-                />
                 <button
                   type="button"
-                  className="mt-3 w-full border border-ink/30 py-2 text-sm text-earth hover:bg-sand/50"
+                  className="w-full border border-ink/30 py-2 text-sm text-earth hover:bg-sand/50"
                   onClick={() => {
                     if (confirm('Remover este lugar do mapa?')) {
                       void api.deleteMarker(slug, marker.id).then(() => {

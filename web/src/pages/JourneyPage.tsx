@@ -10,7 +10,7 @@ import { WarmMap } from '../components/DarkMap'
 import { PlaceSheet } from '../components/PlaceSheet'
 import { StampDock } from '../components/StampDock'
 import { JourneyEditMenu, JourneyMenuButton } from '../components/JourneyEditMenu'
-import { JourneyInviteView } from '../components/JourneyInviteView'
+import { JourneySharedExplore } from '../components/JourneySharedExplore'
 import { JourneyPeopleLine } from '../components/JourneyPeopleLine'
 import { Shell } from '../components/Shell'
 
@@ -77,40 +77,25 @@ export function JourneyPage({ mode }: { mode: Mode }) {
     }
   }, [mode, authLoading, me, journey, slug, navigate])
 
-  // Visitante autenticado sem acesso: entra no mapa e vai para editar
-  useEffect(() => {
-    if (mode !== 'view') return
-    if (!slug || authLoading || !me?.passport || !journey) return
-    if (me.passport.username === journey.owner_username) return
-    const already = (journey.companions ?? []).some((c) => c.username === me.passport.username)
-    if (already) return
-    let cancelled = false
+  async function handleJoinMap() {
+    if (!slug) return
     setJoining(true)
-    void api
-      .joinJourney(slug)
-      .then((res) => {
-        if (cancelled) return
-        if (res.joined) toast.success('Você entrou neste mapa')
-        navigate(`/v/${slug}/edit`, { replace: true })
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setJoining(false)
-          toast.error('Não foi possível entrar neste mapa')
-        }
-      })
-    return () => {
-      cancelled = true
+    try {
+      const res = await api.joinJourney(slug)
+      if (res.joined) toast.success('Você entrou neste mapa')
+      navigate(`/v/${slug}/edit`, { replace: true })
+    } catch {
+      setJoining(false)
+      toast.error('Não foi possível entrar neste mapa')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, slug, authLoading, me?.passport.username, journey?.id, journey?.owner_username, journey?.companions])
+  }
 
   if (mode === 'edit' && !authLoading && !me) {
     return <Navigate to={`/auth?mode=login&next=${encodeURIComponent(`/v/${slug}`)}`} replace />
   }
 
-  // Convidado sem conta: landing de compartilhamento
-  if (mode === 'view' && !authLoading && !me) {
+  // Mapa compartilhado interativo (visitante ou logado sem acesso de edição)
+  if (mode === 'view') {
     if (error) {
       return (
         <Shell compact>
@@ -118,58 +103,32 @@ export function JourneyPage({ mode }: { mode: Mode }) {
         </Shell>
       )
     }
-    if (!journey) {
+    if (authLoading || !journey) {
       return (
         <Shell compact>
-          <p className="text-earth px-4 py-10">Carregando…</p>
+          <p className="text-earth px-4 py-10">Carregando mapa…</p>
         </Shell>
       )
     }
-    return (
-      <Shell>
-        <JourneyInviteView journey={journey} />
-      </Shell>
-    )
-  }
 
-  if (mode === 'view' && (authLoading || joining)) {
-    return (
-      <Shell compact>
-        <p className="text-earth px-4 py-10">
-          {joining ? 'Entrando no mapa…' : 'Abrindo mapa…'}
-        </p>
-      </Shell>
-    )
-  }
-
-  // Logado em /v/:slug — redireciona para edit; se o join falhou, avisa
-  if (mode === 'view' && me && journey && !joining) {
-    const owns = me.passport.username === journey.owner_username
-    const withThem = (journey.companions ?? []).some((c) => c.username === me.passport.username)
-    if (!owns && !withThem) {
+    const owns = me?.passport?.username === journey.owner_username
+    const withThem = (journey.companions ?? []).some((c) => c.username === me?.passport?.username)
+    if (owns || withThem) {
       return (
         <Shell compact>
-          <div className="px-4 py-10 text-center space-y-3">
-            <p className="text-earth">Não foi possível entrar neste mapa.</p>
-            <Link className="text-stamp hover:underline text-sm" to={`/p/${me.passport.username}`}>
-              Voltar ao meu passaporte
-            </Link>
-          </div>
+          <p className="text-earth px-4 py-10">Abrindo mapa…</p>
         </Shell>
       )
     }
-    return (
-      <Shell compact>
-        <p className="text-earth px-4 py-10">Abrindo mapa…</p>
-      </Shell>
-    )
-  }
 
-  if (mode === 'view' && me && !journey && !error) {
     return (
-      <Shell compact>
-        <p className="text-earth px-4 py-10">Carregando…</p>
-      </Shell>
+      <JourneySharedExplore
+        journey={journey}
+        canJoin={!!me?.passport}
+        joining={joining}
+        onJoin={() => void handleJoinMap()}
+        onChanged={() => void load()}
+      />
     )
   }
 
@@ -320,6 +279,7 @@ export function JourneyPage({ mode }: { mode: Mode }) {
           flyTo={flyTo}
           pathColor={journey.color || undefined}
           isPlanning={!!journey.is_planning}
+          showCommentBubbles
           bottomPad={sheetOpen ? 220 : 48}
         />
 
@@ -333,6 +293,8 @@ export function JourneyPage({ mode }: { mode: Mode }) {
             marker={selected}
             slug={slug}
             editable
+            isMapOwner={isOwner}
+            meUsername={me?.passport?.username}
             expeditionLabel={journey.title}
             expeditionDate={journey.started_on || journey.ended_on}
             onClose={() => setSelectedId(null)}

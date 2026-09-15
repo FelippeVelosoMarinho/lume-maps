@@ -5,6 +5,7 @@ import type { Marker as MarkerType } from '../lib/api'
 import { PLANNING_MAP_OPACITY } from '../lib/planningMaps'
 import { CARTO_ATTRIBUTION, cartoVoyagerTileUrl } from '../lib/mapTiles'
 import { MapPathLegs } from './MapPathLegs'
+import { MapCommentBubbles } from './MapCommentBubbles'
 
 function escapeHtml(s: string) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;')
@@ -70,6 +71,8 @@ type Props = {
   bottomPad?: number
   /** Prévia estática (sem zoom/arraste) */
   preview?: boolean
+  /** Balões de comentário acima dos pins (só mapa de viagem) */
+  showCommentBubbles?: boolean
 }
 
 export function WarmMap({
@@ -83,6 +86,7 @@ export function WarmMap({
   isPlanning = false,
   bottomPad = 0,
   preview = false,
+  showCommentBubbles = false,
 }: Props) {
   const ordered = useMemo(
     () => [...markers].sort((a, b) => a.sort_order - b.sort_order),
@@ -119,10 +123,14 @@ export function WarmMap({
         <FitBounds markers={ordered} bottomPad={bottomPad} />
         {!preview && <FlyTo target={flyTo} />}
         {onMapClick && !preview && <ClickHandler onClick={onMapClick} />}
+        {showCommentBubbles && !preview && (
+          <MapCommentBubbles markers={ordered} selectedId={selectedId} onSelect={onSelect} />
+        )}
         {ordered.map((m, i) => (
           <Marker
             key={m.id}
             position={[m.lat, m.lng]}
+            zIndexOffset={m.id === selectedId ? 900 : 400}
             icon={routeNodeIcon(
               m.title,
               i,

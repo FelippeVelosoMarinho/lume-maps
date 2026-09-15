@@ -488,9 +488,7 @@ async def add_annotation(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    journey = await _get_journey_full(db, slug)
-    if not journey or journey.owner_id != user.id:
-        raise HTTPException(status_code=404, detail="Viagem não encontrada")
+    journey = _require_edit(await _get_journey_full(db, slug), user)
     marker = next((m for m in journey.markers if m.id == marker_id), None)
     if not marker:
         raise HTTPException(status_code=404, detail="Marcador não encontrado")
@@ -516,13 +514,16 @@ async def delete_annotation(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    journey = await _get_journey_full(db, slug)
-    if not journey or journey.owner_id != user.id:
-        raise HTTPException(status_code=404, detail="Viagem não encontrada")
+    journey = _require_edit(await _get_journey_full(db, slug), user)
     result = await db.execute(select(Annotation).where(Annotation.id == ann_id, Annotation.marker_id == marker_id))
     ann = result.scalar_one_or_none()
     if not ann:
         raise HTTPException(status_code=404, detail="Anotação não encontrada")
+    if not _is_owner(journey, user):
+        author = (ann.author_username or "").strip()
+        me = (user.passport.username if user.passport else "") or ""
+        if not author or author != me:
+            raise HTTPException(status_code=404, detail="Anotação não encontrada")
     await db.delete(ann)
     await db.commit()
 
