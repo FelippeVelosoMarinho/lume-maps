@@ -2,8 +2,26 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useMap } from 'react-leaflet'
 import L from 'leaflet'
+import { Camera, Lightbulb, Quote, Sparkles, type LucideIcon } from 'lucide-react'
 import type { Marker as MarkerType } from '../lib/api'
 import { mediaUrl } from '../lib/api'
+
+type AnnType = 'note' | 'quote' | 'idea' | 'moment'
+
+const ANN_BUBBLE_STYLES: Record<
+  AnnType,
+  { label: string; Icon: LucideIcon; quoteWrap?: boolean }
+> = {
+  note: { label: 'Nota', Icon: Lightbulb },
+  quote: { label: 'Frase', Icon: Quote, quoteWrap: true },
+  idea: { label: 'Ideia', Icon: Sparkles },
+  moment: { label: 'Momento', Icon: Camera },
+}
+
+function normalizeAnnType(type: string): AnnType {
+  if (type === 'quote' || type === 'idea' || type === 'moment') return type
+  return 'note'
+}
 
 function resolveAuthorPhoto(
   ann: MarkerType['annotations'][0],
@@ -42,6 +60,7 @@ function spreadOffset(count: number, index: number): { dx: number; dy: number } 
 type BubbleItem = {
   key: string
   markerId: string
+  annType: AnnType
   body: string
   who: string
   when: string | null
@@ -77,9 +96,13 @@ function CommentBubble({
   onHover: () => void
   onLeave: () => void
 }) {
+  const styleDef = ANN_BUBBLE_STYLES[item.annType]
+  const { Icon } = styleDef
+  const excerpt = item.body.slice(0, 80) + (item.body.length > 80 ? '…' : '')
+
   return (
     <div
-      className={`map-comment-bubble-row map-comment-bubble-row--overlay${dimmed ? ' is-dimmed' : ''}${highlighted ? ' is-highlighted' : ''}`}
+      className={`map-comment-bubble-row map-comment-bubble-row--overlay map-comment-bubble-row--${item.annType}${dimmed ? ' is-dimmed' : ''}${highlighted ? ' is-highlighted' : ''}`}
       style={style}
       role="button"
       tabIndex={0}
@@ -107,8 +130,14 @@ function CommentBubble({
       </div>
       <div className="map-comment-bubble__column">
         <div className="map-comment-bubble__inner">
+          <span className="map-comment-bubble__type">
+            <Icon size={11} strokeWidth={2.25} aria-hidden />
+            {styleDef.label}
+          </span>
           <div className="map-comment-bubble__body">
-            <p className="map-comment-bubble__text">“{item.body.slice(0, 80)}{item.body.length > 80 ? '…' : ''}”</p>
+            <p className="map-comment-bubble__text">
+              {styleDef.quoteWrap ? `«${excerpt}»` : excerpt}
+            </p>
             <p className="map-comment-bubble__meta">
               {item.who}
               {item.when ? ` · ${item.when}` : ''}
@@ -143,6 +172,7 @@ export function MapCommentBubbles({ markers, selectedId, onSelect, authorPhotos 
         out.push({
           key: `${m.id}-${ann.id}`,
           markerId: m.id,
+          annType: normalizeAnnType(ann.type),
           body: ann.body,
           who: ann.author_name || (ann.author_username ? `@${ann.author_username}` : 'viajante'),
           when,

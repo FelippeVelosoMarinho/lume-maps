@@ -743,11 +743,23 @@ body {
 }
 
 .map-comment-bubble__inner {
-  background: #fffdf8;
-  border: 1px solid rgba(26, 21, 16, 0.18);
-  border-radius: 14px 14px 14px 4px;
-  padding: 7px 10px;
+  background: var(--bubble-bg, #fffdf8);
+  border: 1.5px solid var(--bubble-border, rgba(26, 21, 16, 0.18));
+  border-radius: var(--bubble-radius, 14px 14px 14px 4px);
+  padding: 7px 10px 8px;
   max-width: 158px;
+}
+
+.map-comment-bubble__type {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bubble-accent, #5c4a3a);
+  margin-bottom: 4px;
 }
 
 .map-comment-bubble__body {
@@ -763,7 +775,6 @@ body {
 
 .map-comment-bubble__meta {
   margin: 4px 0 0;
-  font-size: 8px;
   color: #5c4a3a;
   font-family: "Caveat", cursive;
   font-size: 11px;
@@ -777,8 +788,88 @@ body {
   align-self: flex-start;
   border-left: 7px solid transparent;
   border-right: 7px solid transparent;
-  border-top: 8px solid #fffdf8;
+  border-top: 8px solid var(--bubble-bg, #fffdf8);
   filter: drop-shadow(0 1px 0 rgba(26, 21, 16, 0.12));
+}
+
+/* Nota — amarelo suave, cantos arredondados */
+.map-comment-bubble-row--note {
+  --bubble-bg: #fff8e1;
+  --bubble-border: #e6b422;
+  --bubble-accent: #9a7209;
+  --bubble-radius: 16px 16px 16px 4px;
+}
+
+.map-comment-bubble-row--note .map-comment-bubble__avatar {
+  border-color: #fff8e1;
+  box-shadow: 0 0 0 2px #e6b422;
+}
+
+/* Frase — lilás editorial, itálico */
+.map-comment-bubble-row--quote {
+  --bubble-bg: #f4f0ff;
+  --bubble-border: #7b61c7;
+  --bubble-accent: #5a3ea1;
+  --bubble-radius: 4px 14px 14px 14px;
+}
+
+.map-comment-bubble-row--quote .map-comment-bubble__inner {
+  border-left-width: 3px;
+}
+
+.map-comment-bubble-row--quote .map-comment-bubble__text {
+  font-family: "Libre Baskerville", serif;
+  font-style: italic;
+  font-size: 10.5px;
+}
+
+.map-comment-bubble-row--quote .map-comment-bubble__avatar {
+  border-color: #f4f0ff;
+  box-shadow: 0 0 0 2px #7b61c7;
+}
+
+/* Ideia — violeta vibrante, leve inclinação */
+.map-comment-bubble-row--idea {
+  --bubble-bg: #f3eeff;
+  --bubble-border: #8338ec;
+  --bubble-accent: #6a28c8;
+  --bubble-radius: 14px 14px 4px 14px;
+}
+
+.map-comment-bubble-row--idea .map-comment-bubble__column {
+  transform: rotate(-1.5deg);
+}
+
+.map-comment-bubble-row--idea .map-comment-bubble__text {
+  font-weight: 500;
+}
+
+.map-comment-bubble-row--idea .map-comment-bubble__avatar {
+  border-color: #f3eeff;
+  box-shadow: 0 0 0 2px #8338ec;
+}
+
+/* Momento — coral quente, formato mais “instantâneo” */
+.map-comment-bubble-row--moment {
+  --bubble-bg: #fff0eb;
+  --bubble-border: #e63946;
+  --bubble-accent: #b91c1c;
+  --bubble-radius: 14px 4px 14px 14px;
+}
+
+.map-comment-bubble-row--moment .map-comment-bubble__inner {
+  box-shadow: inset 0 -2px 0 rgba(230, 57, 70, 0.15);
+}
+
+.map-comment-bubble-row--moment .map-comment-bubble__text {
+  font-family: "Caveat", cursive;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.map-comment-bubble-row--moment .map-comment-bubble__avatar {
+  border-color: #fff0eb;
+  box-shadow: 0 0 0 2px #e63946;
 }
 
 .transport-leg-icon {
