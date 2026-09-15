@@ -38,6 +38,7 @@ from app.schemas import (
     PassportSearchHit,
 )
 from app.utils.deps import get_current_user
+from app.utils.storage import upload_to_supabase
 
 router = APIRouter(tags=["journeys"])
 
@@ -621,10 +622,14 @@ async def upload_file(
         raise HTTPException(status_code=400, detail="Arquivo maior que 5MB")
     ext = Path(file.filename or "file.jpg").suffix or ".jpg"
     name = f"{uuid.uuid4().hex}{ext}"
-    dest = Path(settings.upload_dir) / name
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_bytes(content)
-    return UploadOut(url=f"/uploads/{name}")
+    if settings.use_supabase_storage:
+        url = await upload_to_supabase(name, content, file.content_type)
+    else:
+        dest = Path(settings.upload_dir) / name
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(content)
+        url = f"/uploads/{name}"
+    return UploadOut(url=url)
 
 
 @router.get("/passports/search", response_model=list[PassportSearchHit])

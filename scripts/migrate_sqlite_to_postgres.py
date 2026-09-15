@@ -34,6 +34,14 @@ TABLES = [
     "journey_companions",
 ]
 
+# SQLite guarda booleans como 0/1; Postgres exige bool nativo
+BOOLEAN_COLS: dict[str, frozenset[str]] = {
+    "users": frozenset({"is_active"}),
+    "journeys": frozenset({"is_public", "is_planning"}),
+    "markers": frozenset({"is_departure"}),
+    "attachments": frozenset({"is_primary"}),
+}
+
 
 def to_psycopg_url(url: str) -> str:
     """Converte postgresql+asyncpg://… para postgresql://… (psycopg)."""
@@ -91,7 +99,18 @@ def migrate(sqlite_path: Path, database_url: str, truncate: bool) -> None:
                     f"INSERT INTO {quote_ident(table)} ({col_list}) VALUES ({placeholders}) "
                     f"ON CONFLICT DO NOTHING"
                 )
-                payload = [tuple(r[c] for c in cols) for r in rows]
+                bool_cols = BOOLEAN_COLS.get(table, frozenset())
+
+                def row_tuple(row: sqlite3.Row) -> tuple:
+                    out = []
+                    for c in cols:
+                        v = row[c]
+                        if c in bool_cols and v is not None:
+                            v = bool(v)
+                        out.append(v)
+                    return tuple(out)
+
+                payload = [row_tuple(r) for r in rows]
                 cur.executemany(sql, payload)
                 print(f"  {table}: {len(payload)} linhas")
 

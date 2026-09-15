@@ -6,6 +6,7 @@ import { Maximize2, Minimize2 } from 'lucide-react'
 import type { TravelJourney } from '../lib/api'
 import { formatPeriod } from '../lib/dates'
 import { PLANNING_MAP_OPACITY, readShowPlanningMaps, writeShowPlanningMaps } from '../lib/planningMaps'
+import { CARTO_ATTRIBUTION, cartoVoyagerTileUrl } from '../lib/mapTiles'
 import { MapPathLegs } from './MapPathLegs'
 
 function escapeHtml(s: string) {
@@ -248,10 +249,7 @@ export function PassportTravelsMap({ journeys, className }: Props) {
           scrollWheelZoom
           zoomControl={false}
         >
-          <TileLayer
-            attribution="&copy; OSM &copy; CARTO"
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-          />
+          <TileLayer attribution={CARTO_ATTRIBUTION} url={cartoVoyagerTileUrl()} />
           <ZoomControl position="bottomright" />
           <FitAll journeys={withPath} />
           <MapResize expanded={expanded} />

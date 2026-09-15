@@ -1,8 +1,9 @@
 import uuid
-from datetime import datetime, date, timezone
+from datetime import datetime, date
 from sqlalchemy import String, DateTime, Date, ForeignKey, Text, Float, Integer, Boolean, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
+from app.utils.datetime_util import utc_now_naive
 
 
 class Passport(Base):
@@ -19,11 +20,11 @@ class Passport(Base):
     issued_at: Mapped[date] = mapped_column(Date, default=lambda: date.today())
     signature: Mapped[str] = mapped_column(String(120), default="")
     bio: Mapped[str] = mapped_column(Text, default="")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: utc_now_naive())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=lambda: utc_now_naive(),
+        onupdate=lambda: utc_now_naive(),
     )
 
     user: Mapped["User"] = relationship(back_populates="passport")
@@ -46,11 +47,11 @@ class Journey(Base):
     # True = planejamento futuro; False = recordação (viagem realizada)
     is_planning: Mapped[bool] = mapped_column(Boolean, default=False)
     is_public: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: utc_now_naive())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=lambda: utc_now_naive(),
+        onupdate=lambda: utc_now_naive(),
     )
 
     owner: Mapped["User"] = relationship(back_populates="journeys")
@@ -69,7 +70,7 @@ class JourneyCompanion(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     journey_id: Mapped[str] = mapped_column(String(36), ForeignKey("journeys.id", ondelete="CASCADE"), nullable=False)
     user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: utc_now_naive())
 
     journey: Mapped["Journey"] = relationship(back_populates="companions")
     user: Mapped["User"] = relationship()
@@ -93,7 +94,7 @@ class Marker(Base):
     is_departure: Mapped[bool] = mapped_column(Boolean, default=False)
     # Meio usado no trecho anterior → este ponto (train|bus|car|motorcycle|bicycle|walk|plane|ship)
     transport: Mapped[str | None] = mapped_column(String(20), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: utc_now_naive())
 
     journey: Mapped["Journey"] = relationship(back_populates="markers")
     annotations: Mapped[list["Annotation"]] = relationship(
@@ -115,7 +116,7 @@ class Annotation(Base):
     author_name: Mapped[str] = mapped_column(String(120), default="")
     author_username: Mapped[str] = mapped_column(String(50), default="")
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: utc_now_naive())
 
     marker: Mapped["Marker"] = relationship(back_populates="annotations")
 
@@ -130,7 +131,7 @@ class Attachment(Base):
     caption: Mapped[str] = mapped_column(String(300), default="")
     is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: utc_now_naive())
 
     marker: Mapped["Marker"] = relationship(back_populates="attachments")
 
@@ -144,7 +145,7 @@ class Stamp(Base):
     journey_id: Mapped[str] = mapped_column(String(36), ForeignKey("journeys.id", ondelete="CASCADE"), nullable=False)
     label: Mapped[str] = mapped_column(String(150), nullable=False)
     rotation: Mapped[float] = mapped_column(Float, default=0)
-    stamped_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    stamped_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: utc_now_naive())
 
     passport: Mapped["Passport"] = relationship(back_populates="stamps")
     marker: Mapped["Marker"] = relationship(back_populates="stamp")

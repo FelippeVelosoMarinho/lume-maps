@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-lea
 import L from 'leaflet'
 import type { Marker as MarkerType } from '../lib/api'
 import { PLANNING_MAP_OPACITY } from '../lib/planningMaps'
+import { CARTO_ATTRIBUTION, cartoVoyagerTileUrl } from '../lib/mapTiles'
 import { MapPathLegs } from './MapPathLegs'
 
 function escapeHtml(s: string) {
@@ -107,10 +108,7 @@ export function WarmMap({
         zoomControl={!preview}
         attributionControl={!preview}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-        />
+        <TileLayer attribution={CARTO_ATTRIBUTION} url={cartoVoyagerTileUrl()} />
         <MapPathLegs
           markers={ordered}
           color={lineColor}
