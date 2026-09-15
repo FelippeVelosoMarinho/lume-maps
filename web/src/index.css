@@ -752,219 +752,122 @@ body {
   min-height: 11rem;
 }
 
-.map-comment-bubbles-stems {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
+/* ── Balões de comentário no mapa (Marker Leaflet ancorado na cidade) ── */
+.map-cb-leaflet {
+  background: transparent !important;
+  border: none !important;
 }
 
-.leaflet-comment-bubbles-pane {
-  z-index: 650 !important;
-  pointer-events: none;
-}
-
-.map-comment-bubbles-layer {
-  position: absolute;
-  inset: 0;
-  overflow: visible;
-  pointer-events: none;
-}
-
-.map-comment-bubble-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
+.map-cb {
+  position: relative;
+  width: 260px;
+  height: 140px;
   pointer-events: auto;
   cursor: pointer;
-  filter: drop-shadow(0 2px 8px rgba(26, 21, 16, 0.2));
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease,
-    filter 0.2s ease;
+  filter: drop-shadow(0 2px 8px rgba(26, 21, 16, 0.22));
+  transition: opacity 0.15s ease, filter 0.15s ease;
 }
 
-.map-comment-bubble-row--overlay {
-  position: absolute;
-  transform: translate(-58px, -100%);
-  transform-origin: 58px 100%;
-  will-change: transform, opacity;
-}
-
-.map-comment-bubble-row--overlay.is-dimmed {
-  opacity: 0.38;
+.map-cb.is-dim {
+  opacity: 0.35;
   filter: drop-shadow(0 1px 3px rgba(26, 21, 16, 0.08));
 }
 
-.map-comment-bubble-row--overlay.is-highlighted {
+.map-cb.is-on {
   opacity: 1;
-  transform: translate(-58px, -100%) scale(1.04);
-  filter: drop-shadow(0 4px 14px rgba(26, 21, 16, 0.28));
-  z-index: 2000 !important;
+  filter: drop-shadow(0 4px 14px rgba(26, 21, 16, 0.3));
+  z-index: 2;
 }
 
-.map-comment-bubble__avatar {
-  width: 34px;
-  height: 34px;
+.map-cb__stem {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.map-cb__card {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(calc(-50% + var(--cb-dx, 0px)));
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  max-width: 210px;
+  padding: 8px 10px 9px;
+  background: var(--cb-bg, #fffdf8);
+  border: 1.5px solid var(--cb-border, rgba(26, 21, 16, 0.18));
+  border-radius: var(--cb-radius, 14px);
+  box-sizing: border-box;
+}
+
+.map-cb__avatar {
+  width: 28px;
+  height: 28px;
   border-radius: 9999px;
   flex-shrink: 0;
   background: #2f6f73;
   color: #f7f1e6;
   border: 2px solid #f7f1e6;
-  box-shadow: 0 1px 4px rgba(26, 21, 16, 0.25);
+  box-shadow: 0 0 0 1.5px var(--cb-border, #5c4a3a);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   font-family: "Libre Baskerville", serif;
   background-size: cover;
   background-position: center;
-  margin-bottom: 10px;
 }
 
-.map-comment-bubble__avatar.has-photo {
+.map-cb__avatar--photo {
   color: transparent;
 }
 
-.map-comment-bubble__column {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.map-cb__body {
   min-width: 0;
 }
 
-.map-comment-bubble__inner {
-  background: var(--bubble-bg, #fffdf8);
-  border: 1.5px solid var(--bubble-border, rgba(26, 21, 16, 0.18));
-  border-radius: var(--bubble-radius, 14px 14px 14px 4px);
-  padding: 8px 12px 9px;
-  min-width: 188px;
-  max-width: 248px;
-}
-
-.map-comment-bubble__type {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+.map-cb__type {
+  display: block;
   font-size: 8px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--bubble-accent, #5c4a3a);
-  margin-bottom: 4px;
+  color: var(--cb-accent, #5c4a3a);
+  margin-bottom: 3px;
 }
 
-.map-comment-bubble__body {
-  min-width: 0;
-}
-
-.map-comment-bubble__text {
+.map-cb__text {
   margin: 0;
   font-size: 11px;
-  line-height: 1.45;
+  line-height: 1.4;
   color: #1a1510;
 }
 
-.map-comment-bubble__meta {
-  margin: 4px 0 0;
-  color: #5c4a3a;
-  font-family: "Caveat", cursive;
-  font-size: 11px;
-  line-height: 1.1;
-}
-
-.map-comment-bubble__tail {
-  width: 0;
-  height: 0;
-  margin: 0 auto;
-  align-self: center;
-  border-left: 7px solid transparent;
-  border-right: 7px solid transparent;
-  border-top: 8px solid var(--bubble-bg, #fffdf8);
-  filter: drop-shadow(0 1px 0 rgba(26, 21, 16, 0.12));
-}
-
-/* Nota — amarelo suave, cantos arredondados */
-.map-comment-bubble-row--note {
-  --bubble-bg: #fff8e1;
-  --bubble-border: #e6b422;
-  --bubble-accent: #9a7209;
-  --bubble-radius: 16px 16px 16px 4px;
-}
-
-.map-comment-bubble-row--note .map-comment-bubble__avatar {
-  border-color: #fff8e1;
-  box-shadow: 0 0 0 2px #e6b422;
-}
-
-/* Frase — lilás editorial, itálico */
-.map-comment-bubble-row--quote {
-  --bubble-bg: #f4f0ff;
-  --bubble-border: #7b61c7;
-  --bubble-accent: #5a3ea1;
-  --bubble-radius: 4px 14px 14px 14px;
-}
-
-.map-comment-bubble-row--quote .map-comment-bubble__inner {
-  border-left-width: 3px;
-}
-
-.map-comment-bubble-row--quote .map-comment-bubble__text {
+.map-cb--quote .map-cb__text {
   font-family: "Libre Baskerville", serif;
   font-style: italic;
   font-size: 10.5px;
 }
 
-.map-comment-bubble-row--quote .map-comment-bubble__avatar {
-  border-color: #f4f0ff;
-  box-shadow: 0 0 0 2px #7b61c7;
+.map-cb--quote .map-cb__card {
+  border-left-width: 3px;
 }
 
-/* Ideia — violeta vibrante, leve inclinação */
-.map-comment-bubble-row--idea {
-  --bubble-bg: #f3eeff;
-  --bubble-border: #8338ec;
-  --bubble-accent: #6a28c8;
-  --bubble-radius: 14px 14px 4px 14px;
-}
-
-.map-comment-bubble-row--idea .map-comment-bubble__column {
-  transform: rotate(-1.5deg);
-}
-
-.map-comment-bubble-row--idea .map-comment-bubble__text {
-  font-weight: 500;
-}
-
-.map-comment-bubble-row--idea .map-comment-bubble__avatar {
-  border-color: #f3eeff;
-  box-shadow: 0 0 0 2px #8338ec;
-}
-
-/* Momento — coral quente, formato mais “instantâneo” */
-.map-comment-bubble-row--moment {
-  --bubble-bg: #fff0eb;
-  --bubble-border: #e63946;
-  --bubble-accent: #b91c1c;
-  --bubble-radius: 14px 4px 14px 14px;
-}
-
-.map-comment-bubble-row--moment .map-comment-bubble__inner {
-  box-shadow: inset 0 -2px 0 rgba(230, 57, 70, 0.15);
-}
-
-.map-comment-bubble-row--moment .map-comment-bubble__text {
+.map-cb--moment .map-cb__text {
   font-family: "Caveat", cursive;
   font-size: 12px;
   line-height: 1.25;
 }
 
-.map-comment-bubble-row--moment .map-comment-bubble__avatar {
-  border-color: #fff0eb;
-  box-shadow: 0 0 0 2px #e63946;
+.map-cb__meta {
+  margin: 4px 0 0;
+  color: #5c4a3a;
+  font-family: "Caveat", cursive;
+  font-size: 11px;
+  line-height: 1.1;
 }
 
 .transport-leg-icon {
