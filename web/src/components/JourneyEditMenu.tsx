@@ -33,6 +33,7 @@ export function JourneyEditMenu({
 }: Props) {
   const navigate = useNavigate()
   const [title, setTitle] = useState(journey.title)
+  const [subtitle, setSubtitle] = useState(journey.subtitle ?? '')
   const [startedOn, setStartedOn] = useState(journey.started_on ?? '')
   const [endedOn, setEndedOn] = useState(journey.ended_on ?? '')
   const [isPlanning, setIsPlanning] = useState(!!journey.is_planning)
@@ -46,6 +47,7 @@ export function JourneyEditMenu({
 
   useEffect(() => {
     setTitle(journey.title)
+    setSubtitle(journey.subtitle ?? '')
     setStartedOn(journey.started_on ?? '')
     setEndedOn(journey.ended_on ?? '')
     setIsPlanning(!!journey.is_planning)
@@ -100,6 +102,7 @@ export function JourneyEditMenu({
     try {
       const updated = await api.updateJourney(slug, {
         title: title.trim() || journey.title,
+        subtitle: subtitle.trim(),
         started_on: startedOn || null,
         ended_on: endedOn || null,
         is_planning: isPlanning,
@@ -210,6 +213,16 @@ export function JourneyEditMenu({
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+                className="mt-1 w-full border border-dashed border-ink/30 bg-cream px-3 py-2 text-sm outline-none focus:border-earth"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="text-[11px] uppercase text-earth">Descrição</span>
+              <input
+                value={subtitle}
+                onChange={(e) => setSubtitle(e.target.value)}
+                maxLength={300}
+                placeholder="Breve descrição da viagem"
                 className="mt-1 w-full border border-dashed border-ink/30 bg-cream px-3 py-2 text-sm outline-none focus:border-earth"
               />
             </label>
