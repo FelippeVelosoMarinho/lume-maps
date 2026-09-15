@@ -667,6 +667,18 @@ body {
   box-shadow: 0 1px 3px rgba(26, 21, 16, 0.12);
 }
 
+.leaflet-comment-bubbles-pane {
+  z-index: 650 !important;
+  pointer-events: none;
+}
+
+.map-comment-bubbles-layer {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
 .map-comment-bubble-row {
   display: flex;
   align-items: flex-end;
@@ -674,6 +686,29 @@ body {
   pointer-events: auto;
   cursor: pointer;
   filter: drop-shadow(0 2px 8px rgba(26, 21, 16, 0.2));
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    filter 0.2s ease;
+}
+
+.map-comment-bubble-row--overlay {
+  position: absolute;
+  transform: translate(-44px, -100%);
+  transform-origin: 44px 100%;
+  will-change: transform, opacity;
+}
+
+.map-comment-bubble-row--overlay.is-dimmed {
+  opacity: 0.38;
+  filter: drop-shadow(0 1px 3px rgba(26, 21, 16, 0.08));
+}
+
+.map-comment-bubble-row--overlay.is-highlighted {
+  opacity: 1;
+  transform: translate(-44px, -100%) scale(1.04);
+  filter: drop-shadow(0 4px 14px rgba(26, 21, 16, 0.28));
+  z-index: 2000 !important;
 }
 
 .map-comment-bubble__avatar {

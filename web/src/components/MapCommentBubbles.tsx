@@ -1,11 +1,9 @@
-import { Marker } from 'react-leaflet'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { useMap } from 'react-leaflet'
 import L from 'leaflet'
 import type { Marker as MarkerType } from '../lib/api'
 import { mediaUrl } from '../lib/api'
-
-function escapeHtml(s: string) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;')
-}
 
 function resolveAuthorPhoto(
   ann: MarkerType['annotations'][0],
@@ -23,103 +21,201 @@ function resolveAuthorPhoto(
 
 function authorInitial(name: string, username: string) {
   const src = (name || username || '?').trim()
-  return escapeHtml(src.charAt(0).toUpperCase())
+  return src.charAt(0).toUpperCase()
 }
 
-function bubbleIcon(
-  body: string,
-  author: string,
-  when: string | null,
-  avatarUrl: string | null,
-  initial: string,
-  offsetIndex: number,
-) {
-  const excerpt = escapeHtml(body.slice(0, 80) + (body.length > 80 ? '…' : ''))
-  const who = escapeHtml(author || 'viajante')
-  const date = when ? escapeHtml(when) : ''
-  const avatarStyle = avatarUrl
-    ? `background-image:url('${String(avatarUrl).replace(/'/g, "%27")}')`
-    : ''
-  const shift = offsetIndex * 16
+/** Distribui balões num arco acima do pin, com espaçamento mínimo. */
+function spreadOffset(count: number, index: number): { dx: number; dy: number } {
+  const baseLift = 98
+  const minGap = 76
 
-  return L.divIcon({
-    className: '',
-    iconSize: [210, 92],
-    iconAnchor: [130 - shift, 92],
-    html: `<div class="map-comment-bubble-row" style="transform:translateX(${shift}px)">
-      <div class="map-comment-bubble__avatar ${avatarUrl ? 'has-photo' : ''}" style="${avatarStyle}" aria-hidden="true">${avatarUrl ? '' : initial}</div>
-      <div class="map-comment-bubble__column">
-        <div class="map-comment-bubble__inner">
-          <div class="map-comment-bubble__body">
-            <p class="map-comment-bubble__text">“${excerpt}”</p>
-            <p class="map-comment-bubble__meta">${who}${date ? ` · ${date}` : ''}</p>
-          </div>
-        </div>
-        <div class="map-comment-bubble__tail"></div>
-      </div>
-    </div>`,
-  })
+  if (count <= 1) return { dx: 0, dy: -baseLift }
+
+  const arcWidth = Math.max(minGap * (count - 1), minGap)
+  const t = index / (count - 1)
+  const dx = (t - 0.5) * arcWidth
+  const dy = -baseLift - Math.abs(t - 0.5) * 28
+
+  return { dx, dy }
+}
+
+type BubbleItem = {
+  key: string
+  markerId: string
+  body: string
+  who: string
+  when: string | null
+  avatarUrl: string | null
+  initial: string
+  lat: number
+  lng: number
+  spreadIndex: number
+  spreadCount: number
 }
 
 type Props = {
   markers: MarkerType[]
   selectedId?: string | null
   onSelect?: (id: string) => void
-  /** Fotos de perfil por @username (dono + companheiros) */
   authorPhotos?: Record<string, string | null | undefined>
+}
+
+function CommentBubble({
+  item,
+  style,
+  dimmed,
+  highlighted,
+  onSelect,
+  onHover,
+  onLeave,
+}: {
+  item: BubbleItem
+  style: { left: number; top: number; zIndex: number }
+  dimmed: boolean
+  highlighted: boolean
+  onSelect?: (id: string) => void
+  onHover: () => void
+  onLeave: () => void
+}) {
+  return (
+    <div
+      className={`map-comment-bubble-row map-comment-bubble-row--overlay${dimmed ? ' is-dimmed' : ''}${highlighted ? ' is-highlighted' : ''}`}
+      style={style}
+      role="button"
+      tabIndex={0}
+      onMouseEnter={onHover}
+      onMouseLeave={onLeave}
+      onFocus={onHover}
+      onBlur={onLeave}
+      onClick={(e) => {
+        e.stopPropagation()
+        onSelect?.(item.markerId)
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onSelect?.(item.markerId)
+        }
+      }}
+    >
+      <div
+        className={`map-comment-bubble__avatar ${item.avatarUrl ? 'has-photo' : ''}`}
+        style={item.avatarUrl ? { backgroundImage: `url('${item.avatarUrl}')` } : undefined}
+        aria-hidden
+      >
+        {!item.avatarUrl && item.initial}
+      </div>
+      <div className="map-comment-bubble__column">
+        <div className="map-comment-bubble__inner">
+          <div className="map-comment-bubble__body">
+            <p className="map-comment-bubble__text">“{item.body.slice(0, 80)}{item.body.length > 80 ? '…' : ''}”</p>
+            <p className="map-comment-bubble__meta">
+              {item.who}
+              {item.when ? ` · ${item.when}` : ''}
+            </p>
+          </div>
+        </div>
+        <div className="map-comment-bubble__tail" />
+      </div>
+    </div>
+  )
 }
 
 /** Balões de chat apontando para pins — só no mapa de viagem específica. */
 export function MapCommentBubbles({ markers, selectedId, onSelect, authorPhotos }: Props) {
-  const items: { marker: MarkerType; annIndex: number; ann: MarkerType['annotations'][0] }[] = []
+  const map = useMap()
+  const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({})
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null)
+  const [pane, setPane] = useState<HTMLElement | null>(null)
 
-  for (const m of markers) {
-    m.annotations.forEach((ann, i) => {
-      if (!ann.body?.trim()) return
-      items.push({ marker: m, annIndex: i, ann })
-    })
-  }
-
-  if (!items.length) return null
-
-  return (
-    <>
-      {items.map(({ marker, annIndex, ann }) => {
-        if (marker.id === selectedId) return null
-
+  const items = useMemo(() => {
+    const out: BubbleItem[] = []
+    for (const m of markers) {
+      const anns = m.annotations.filter((a) => a.body?.trim())
+      anns.forEach((ann, i) => {
+        if (m.id === selectedId) return
         const when = ann.created_at
           ? new Date(ann.created_at).toLocaleDateString('pt-BR', {
               day: '2-digit',
               month: 'short',
             })
           : null
-        const who =
-          ann.author_name ||
-          (ann.author_username ? `@${ann.author_username}` : '')
-        const avatarUrl = resolveAuthorPhoto(ann, authorPhotos)
-        const initial = authorInitial(ann.author_name || '', ann.author_username || '')
+        out.push({
+          key: `${m.id}-${ann.id}`,
+          markerId: m.id,
+          body: ann.body,
+          who: ann.author_name || (ann.author_username ? `@${ann.author_username}` : 'viajante'),
+          when,
+          avatarUrl: resolveAuthorPhoto(ann, authorPhotos),
+          initial: authorInitial(ann.author_name || '', ann.author_username || ''),
+          lat: m.lat,
+          lng: m.lng,
+          spreadIndex: i,
+          spreadCount: anns.length,
+        })
+      })
+    }
+    return out
+  }, [markers, selectedId, authorPhotos])
 
-        const latOffset = 0.012 + annIndex * 0.004
+  const updatePositions = useCallback(() => {
+    const next: Record<string, { x: number; y: number }> = {}
+    for (const item of items) {
+      const pin = map.latLngToContainerPoint(L.latLng(item.lat, item.lng))
+      const { dx, dy } = spreadOffset(item.spreadCount, item.spreadIndex)
+      next[item.key] = { x: pin.x + dx, y: pin.y + dy }
+    }
+    setPositions(next)
+  }, [map, items])
+
+  useEffect(() => {
+    let overlay = map.getPane('commentBubblesPane') as HTMLElement | undefined
+    if (!overlay) {
+      overlay = map.createPane('commentBubblesPane') as HTMLElement
+      overlay.className = 'leaflet-comment-bubbles-pane'
+    }
+    setPane(overlay)
+  }, [map])
+
+  useEffect(() => {
+    updatePositions()
+    map.on('move zoom zoomend moveend resize viewreset', updatePositions)
+    return () => {
+      map.off('move zoom zoomend moveend resize viewreset', updatePositions)
+    }
+  }, [map, updatePositions])
+
+  if (!items.length || !pane) return null
+
+  const hasHover = hoveredKey !== null
+
+  return createPortal(
+    <div className="map-comment-bubbles-layer">
+      {items.map((item, z) => {
+        const pos = positions[item.key]
+        if (!pos) return null
+
+        const highlighted = hoveredKey === item.key
+        const dimmed = hasHover && !highlighted
 
         return (
-          <Marker
-            key={`${marker.id}-${ann.id}`}
-            position={[marker.lat + latOffset, marker.lng]}
-            icon={bubbleIcon(ann.body, who, when, avatarUrl, initial, annIndex)}
-            zIndexOffset={800 + annIndex}
-            eventHandlers={
-              onSelect
-                ? {
-                    click: (e) => {
-                      L.DomEvent.stopPropagation(e)
-                      onSelect(marker.id)
-                    },
-                  }
-                : undefined
-            }
+          <CommentBubble
+            key={item.key}
+            item={item}
+            dimmed={dimmed}
+            highlighted={highlighted}
+            onSelect={onSelect}
+            onHover={() => setHoveredKey(item.key)}
+            onLeave={() => setHoveredKey((k) => (k === item.key ? null : k))}
+            style={{
+              left: pos.x,
+              top: pos.y,
+              zIndex: highlighted ? 2000 : 900 + z,
+            }}
           />
         )
       })}
-    </>
+    </div>,
+    pane,
   )
 }
