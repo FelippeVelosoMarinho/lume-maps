@@ -370,7 +370,7 @@ export function PassportPage() {
                 <div className="flex justify-end">
                   <button
                     type="button"
-                    className="manifest-download"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-stamp text-cream px-5 py-2.5 text-sm font-medium shadow-sm hover:brightness-110 min-h-11 disabled:opacity-60"
                     disabled={exporting}
                     onClick={() => void downloadCard()}
                   >

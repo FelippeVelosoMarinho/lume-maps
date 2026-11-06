@@ -73,66 +73,57 @@ body {
   padding-bottom: 0.25rem;
 }
 
-/* Cartão de licença: estrela em todo o perímetro */
+/* Cartão de licença: estrela com rastro no perímetro */
 .passport-card {
   background: var(--color-paper);
   border: 1px solid var(--color-ink);
-  padding: 14px 12px;
+  padding: 28px 24px;
   overflow: hidden;
 }
 
 .passport-stars {
   position: absolute;
-  background-color: var(--color-ink);
-  /* tile 24×24 com estrela ~10px no centro → gap visível entre estrelas */
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon fill='black' points='12,3.5 13.3,8.2 18.2,8.2 14.3,11.1 15.7,15.8 12,12.9 8.3,15.8 9.7,11.1 5.8,8.2 10.7,8.2'/%3E%3C/svg%3E");
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon fill='black' points='12,3.5 13.3,8.2 18.2,8.2 14.3,11.1 15.7,15.8 12,12.9 8.3,15.8 9.7,11.1 5.8,8.2 10.7,8.2'/%3E%3C/svg%3E");
-  mask-size: 20px 20px;
-  -webkit-mask-size: 20px 20px;
   pointer-events: none;
   z-index: 2;
+  background-repeat: repeat-x;
+  background-position: center;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='22' viewBox='0 0 72 22'%3E%3Cpath d='M1 13c10 0 16-7 30-5l1 5C20 15 12 18 1 17Z' fill='%23c8c1b6'/%3E%3Cpath d='M6 7c12 1 18 6 28 4l1 4C26 17 16 12 6 11Z' fill='%23f7f3ec'/%3E%3Cpath d='M10 15c10-1 16-5 24-3l1 4C28 14 20 19 10 18Z' fill='%23f3a8cc'/%3E%3Cpolygon fill='%23e23c8a' points='58,3 60.6,9 67,9 61.8,12.6 63.6,18.6 58,15 52.4,18.6 54.2,12.6 49,9 55.4,9'/%3E%3C/svg%3E");
+  background-size: 72px 22px;
 }
 
 .passport-stars--top,
 .passport-stars--bottom {
-  left: 16px;
-  right: 16px;
-  height: 11px;
-  mask-size: 20px 11px;
-  -webkit-mask-size: 20px 11px;
-  mask-repeat: repeat-x;
-  -webkit-mask-repeat: repeat-x;
-  mask-position: center;
-  -webkit-mask-position: center;
+  left: 12px;
+  right: 12px;
+  height: 22px;
 }
 
 .passport-stars--top {
-  top: 5px;
+  top: 3px;
 }
 
 .passport-stars--bottom {
-  bottom: 5px;
+  bottom: 3px;
+  transform: scaleX(-1);
 }
 
 .passport-stars--left,
 .passport-stars--right {
-  top: 16px;
-  bottom: 16px;
-  width: 11px;
-  mask-size: 11px 20px;
-  -webkit-mask-size: 11px 20px;
-  mask-repeat: repeat-y;
-  -webkit-mask-repeat: repeat-y;
-  mask-position: center;
-  -webkit-mask-position: center;
+  top: 12px;
+  bottom: 12px;
+  width: 22px;
+  background-repeat: repeat-y;
+  background-size: 22px 72px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='72' viewBox='0 0 22 72'%3E%3Cpath d='M13 1c0 10-7 16-5 30l5 1C15 20 18 12 17 1Z' fill='%23c8c1b6'/%3E%3Cpath d='M7 6c1 12 6 18 4 28l4 1C17 26 12 16 11 6Z' fill='%23f7f3ec'/%3E%3Cpath d='M15 10c-1 10-5 16-3 24l4 1C14 28 19 20 18 10Z' fill='%23f3a8cc'/%3E%3Cpolygon fill='%23e23c8a' points='3,58 9,60.6 9,67 12.6,61.8 18.6,63.6 15,58 18.6,52.4 12.6,54.2 9,49 9,55.4'/%3E%3C/svg%3E");
 }
 
 .passport-stars--left {
-  left: 5px;
+  left: 2px;
+  transform: scaleY(-1);
 }
 
 .passport-stars--right {
-  right: 5px;
+  right: 2px;
 }
 
 .passport-card__inner {
@@ -145,7 +136,7 @@ body {
 
 @media (min-width: 768px) {
   .passport-card {
-    padding: 20px 18px;
+    padding: 32px 28px;
   }
   .passport-card__inner {
     padding: 1.1rem 1.25rem 1.25rem;
@@ -155,25 +146,23 @@ body {
 /* Ticket: um pouco mais de respiro nas estrelas */
 .passport-card--ticket .passport-stars--top,
 .passport-card--ticket .passport-stars--bottom {
-  left: 14px;
-  right: 14px;
-  mask-size: 22px 10px;
-  -webkit-mask-size: 22px 10px;
-  height: 10px;
+  left: 10px;
+  right: 10px;
+  height: 14px;
+  background-size: 42px 14px;
 }
 
 .passport-card--ticket .passport-stars--left,
 .passport-card--ticket .passport-stars--right {
-  top: 14px;
-  bottom: 14px;
-  mask-size: 10px 22px;
-  -webkit-mask-size: 10px 22px;
-  width: 10px;
+  top: 10px;
+  bottom: 10px;
+  width: 14px;
+  background-size: 14px 42px;
 }
 
 /* Ticket retangular (CMIYGL) — convite */
 .passport-card--ticket {
-  padding: 10px 12px;
+  padding: 16px 14px;
   aspect-ratio: 16 / 10;
   max-width: 100%;
   width: 100%;
@@ -249,7 +238,7 @@ body {
 
 @media (min-width: 640px) {
   .passport-card--ticket {
-    padding: 12px 14px;
+    padding: 18px 16px;
   }
   .passport-card--ticket .passport-card__inner {
     padding: 0.7rem 0.85rem 0.75rem;
@@ -295,217 +284,6 @@ body {
   letter-spacing: 0.05em;
   opacity: 0.9;
   max-width: 5.2rem;
-}
-
-/* Cartão-manifesto: céu cobalto (radar) + talão documental */
-.manifest-card {
-  position: relative;
-  width: min(100%, 34rem);
-  margin-inline: auto;
-  border-radius: 18px;
-  overflow: hidden;
-  background: #f4ead6;
-  border: 1px solid rgba(18, 36, 84, 0.45);
-  box-shadow: 0 16px 36px rgba(12, 28, 72, 0.16);
-}
-
-.manifest-sky {
-  position: relative;
-  min-height: 9.2rem;
-  padding: 1.15rem 1.25rem 2.4rem;
-  color: #ffe56a;
-  background:
-    repeating-radial-gradient(
-      circle at 78% 120%,
-      transparent 0 22px,
-      rgba(255, 255, 255, 0.16) 23px 24px,
-      transparent 25px 46px
-    ),
-    radial-gradient(circle at 78% 130%, rgba(0, 194, 212, 0.55), transparent 58%),
-    linear-gradient(155deg, #0c34e8 0%, #1236c4 48%, #1393c8 100%);
-  overflow: hidden;
-}
-
-.manifest-sky__word {
-  margin: 0;
-  font-family: "Shrikhand", "Libre Baskerville", serif;
-  font-size: clamp(3.4rem, 12vw, 4.6rem);
-  font-weight: 400;
-  line-height: 0.82;
-  letter-spacing: -0.02em;
-  color: #ffe14a;
-  text-shadow: 0 3px 0 rgba(8, 20, 80, 0.18);
-}
-
-.manifest-sky__kicker {
-  margin: 0.35rem 0 0;
-  font-family: "Libre Baskerville", serif;
-  font-size: 0.68rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: #f7f1e6;
-}
-
-.manifest-tear {
-  position: absolute;
-  top: 1.1rem;
-  right: 1.15rem;
-  width: 26px;
-  height: 36px;
-  filter: drop-shadow(0 2px 0 rgba(8, 20, 80, 0.15));
-}
-
-.manifest-slip {
-  position: relative;
-  padding: 0 1.15rem 1.05rem;
-  background:
-    radial-gradient(ellipse at 10% 0%, rgba(18, 70, 224, 0.05), transparent 42%),
-    #f4ead6;
-}
-
-.manifest-slip__top {
-  display: grid;
-  grid-template-columns: 92px minmax(0, 1fr);
-  gap: 0.85rem;
-  align-items: end;
-  margin-top: -2.35rem;
-}
-
-.manifest-portrait-slot {
-  width: 92px;
-}
-
-.manifest-portrait {
-  display: block;
-  width: 92px;
-  height: 108px;
-  object-fit: cover;
-  object-position: center 15%;
-  border-radius: 8px;
-  border: 3px solid #f4ead6;
-  box-shadow: 0 8px 16px rgba(12, 24, 64, 0.28);
-  background: #e7d7bc;
-}
-
-.manifest-portrait--empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-size: 10px;
-  color: rgba(26, 21, 16, 0.55);
-  padding: 0.4rem;
-}
-
-.manifest-doc-title {
-  margin: 0;
-  font-family: "Libre Baskerville", serif;
-  font-size: 0.95rem;
-  font-weight: 700;
-  line-height: 1.25;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-  color: #1a1510;
-}
-
-.manifest-number {
-  margin: 0.28rem 0 0;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.75rem;
-  color: #1246e0;
-}
-
-.manifest-meta {
-  margin: 0.15rem 0 0;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.68rem;
-  color: rgba(26, 21, 16, 0.72);
-}
-
-.manifest-clause {
-  margin: 0.9rem 0 0;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.78rem;
-  line-height: 1.55;
-  text-align: justify;
-  color: rgba(26, 21, 16, 0.88);
-}
-
-.manifest-typed {
-  display: inline-block;
-  font-family: "Special Elite", "Courier New", monospace;
-  font-size: 1.02rem;
-  line-height: 1.05;
-  letter-spacing: 0.01em;
-  color: #142033;
-  background: rgba(255, 236, 140, 0.72);
-  border-bottom: 1px dashed #1a1510;
-  padding: 0 0.22em 0.02em;
-  margin: 0 0.08em;
-  transform: rotate(-1.1deg);
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
-}
-
-.manifest-typed--tiny {
-  font-size: 0.72rem;
-}
-
-.manifest-foot {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-top: 0.85rem;
-}
-
-.manifest-sign {
-  margin: 0;
-  max-width: 11rem;
-  font-family: "Caveat", cursive;
-  font-size: 1.85rem;
-  line-height: 1;
-  color: #1a1510;
-  border-bottom: 1px dashed #1a1510;
-  padding-bottom: 0.1rem;
-}
-
-.manifest-sign-label {
-  margin: 0.28rem 0 0;
-  font-size: 0.62rem;
-  color: rgba(26, 21, 16, 0.7);
-}
-
-.manifest-stamp {
-  position: static;
-  margin: 0;
-  flex-shrink: 0;
-  width: 6.4rem;
-  height: 4.4rem;
-  font-size: 0.62rem;
-}
-
-.manifest-download {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  border-radius: 999px;
-  background: #1246e0;
-  color: #fff8d6;
-  padding: 0.55rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  min-height: 2.75rem;
-  box-shadow: 0 6px 14px rgba(18, 70, 224, 0.25);
-}
-
-.manifest-download:hover {
-  filter: brightness(1.08);
-}
-
-.manifest-download:disabled {
-  opacity: 0.6;
 }
 
 .passport-photo-edit {
@@ -802,32 +580,7 @@ body {
 }
 
 .warm-map.leaflet-container {
-  background: #d5e4f2;
-}
-
-.map-stage {
-  position: relative;
-  isolation: isolate;
-}
-
-/* Radar concêntrico — bússola em cobalto/ciano, atrás dos pins */
-.map-radar {
-  position: absolute;
-  inset: 0;
-  z-index: 450;
-  pointer-events: none;
-  background:
-    repeating-radial-gradient(
-      circle at 50% 46%,
-      transparent 0 62px,
-      rgba(0, 168, 196, 0.55) 63px 65px,
-      transparent 66px 128px
-    ),
-    radial-gradient(circle at 50% 46%, rgba(18, 70, 224, 0.12), transparent 58%);
-}
-
-.warm-map .leaflet-tile-pane {
-  filter: saturate(1.2) hue-rotate(14deg) contrast(1.04);
+  background: #e8dcc8;
 }
 
 /* Overlays acima dos panes do Leaflet (~200–700) e controls (~1000) */
@@ -849,9 +602,9 @@ body {
   width: 28px;
   height: 28px;
   border-radius: 9999px;
-  border: 2px solid #1246E0;
+  border: 2px solid #2F6F73;
   background: #F7F1E6;
-  color: #1246E0;
+  color: #2F6F73;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -874,9 +627,9 @@ body {
 }
 
 .stamp-marker-icon.active {
-  background-color: #1246E0;
-  color: #FFF4C2;
-  border-color: #F5C518;
+  background-color: #2F6F73;
+  color: #F7F1E6;
+  border-color: #5C3D2E;
   width: 32px;
   height: 32px;
 }

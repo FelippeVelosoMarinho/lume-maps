@@ -173,10 +173,6 @@ export const JOURNEY_COLOR_PALETTE = [
   '#118AB2',
   '#8338EC',
   '#EF476F',
-  '#1246E0',
-  '#00C2D4',
-  '#F5C518',
-  '#E23C8A',
 ]
 
 /** Fotos de perfil dos participantes do mapa, indexadas por @username */

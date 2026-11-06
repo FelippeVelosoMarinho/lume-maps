@@ -1,6 +1,6 @@
-import { forwardRef, type ChangeEvent, type CSSProperties, type ReactNode } from 'react'
+import { forwardRef, type ChangeEvent, type CSSProperties, type ReactNode, type Ref } from 'react'
 import { Camera } from 'lucide-react'
-import { mediaUrl, type Passport, type Stamp } from '../lib/api'
+import type { Passport, Stamp } from '../lib/api'
 import { AnalogPhoto } from './AnalogPhoto'
 import { formatPeriod } from '../lib/dates'
 
@@ -96,12 +96,14 @@ export function StampSeal({ stamp, size = 112 }: { stamp: Stamp; size?: number }
 function StarFrame({
   children,
   className = '',
+  cardRef,
 }: {
   children: ReactNode
   className?: string
+  cardRef?: Ref<HTMLElement>
 }) {
   return (
-    <article className={`passport-card paper-grain relative bg-paper ${className}`}>
+    <article ref={cardRef} className={`passport-card paper-grain relative bg-paper ${className}`}>
       <div className="passport-stars passport-stars--top" aria-hidden />
       <div className="passport-stars passport-stars--bottom" aria-hidden />
       <div className="passport-stars passport-stars--left" aria-hidden />
@@ -122,69 +124,6 @@ type PassportCardProps = {
   variant?: 'default' | 'ticket'
 }
 
-function TearMark() {
-  return (
-    <svg className="manifest-tear" viewBox="0 0 40 56" aria-hidden>
-      <path
-        d="M20 2 C20 2 36 22 36 34 a16 16 0 1 1 -32 0 C4 22 20 2 20 2 Z"
-        fill="#7FE7F5"
-      />
-      <path
-        d="M15 30c2.2 5 5.4 8 7.2 14"
-        fill="none"
-        stroke="#f7fbff"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        opacity="0.85"
-      />
-    </svg>
-  )
-}
-
-function LicenseClause({ name, compact = false }: { name: string; compact?: boolean }) {
-  return (
-    <p className={compact ? 'font-mono text-[8px] sm:text-[9px] leading-snug text-ink/85 line-clamp-3' : 'manifest-clause'}>
-      Certifica-se que <span className={`manifest-typed ${compact ? 'manifest-typed--tiny' : ''}`}>{name}</span> está
-      livre para viajar, circular e explorar livremente por onde quiser, salvo se a lei impedir.
-    </p>
-  )
-}
-
-function Portrait({
-  passport,
-  onPhotoChange,
-}: {
-  passport: Passport
-  onPhotoChange?: (file: File) => void | Promise<void>
-}) {
-  function onFile(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (file) void onPhotoChange?.(file)
-  }
-
-  const photo = mediaUrl(passport.photo_url)
-  const image = photo ? (
-    <img src={photo} alt={passport.display_name} className="manifest-portrait" />
-  ) : (
-    <div className="manifest-portrait manifest-portrait--empty">Sem foto</div>
-  )
-
-  if (!onPhotoChange) return image
-
-  return (
-    <label className="passport-photo-edit group cursor-pointer block relative">
-      <input type="file" accept="image/*" className="sr-only" data-export-ignore onChange={onFile} />
-      {image}
-      <span className="passport-photo-edit__overlay" data-export-ignore aria-hidden>
-        <Camera size={18} strokeWidth={1.75} />
-        <span className="text-[10px] font-medium mt-1">Trocar foto</span>
-      </span>
-      <span className="sr-only">Trocar fotografia do viajante</span>
-    </label>
-  )
-}
-
 export const PassportCard = forwardRef<HTMLElement, PassportCardProps>(function PassportCard(
   { passport, onPhotoChange, variant = 'default' },
   ref,
@@ -193,41 +132,102 @@ export const PassportCard = forwardRef<HTMLElement, PassportCardProps>(function 
     return <PassportTicket passport={passport} />
   }
 
+  function onFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (file) void onPhotoChange?.(file)
+  }
+
   return (
-    <article ref={ref} className="manifest-card">
-      <header className="manifest-sky">
-        <p className="manifest-sky__word">Livre</p>
-        <p className="manifest-sky__kicker">Por onde quiser</p>
-        <TearMark />
-      </header>
-      <div className="manifest-slip">
-        <div className="manifest-slip__top">
-          <div className="manifest-portrait-slot">
-            <Portrait passport={passport} onPhotoChange={onPhotoChange} />
-          </div>
-          <div className="min-w-0 pb-0.5">
-            <h1 className="manifest-doc-title">Licença Permanente de Viagem</h1>
-            <p className="manifest-number">{passport.passport_number}</p>
-            <p className="manifest-meta">
-              @{passport.username}
-              {passport.place_of_issue ? ` · ${passport.place_of_issue}` : ''}
-              {passport.issued_at ? ` · ${formatDate(passport.issued_at)}` : ''}
-            </p>
-          </div>
+    <StarFrame cardRef={ref}>
+      <div className="grid md:grid-cols-[150px_1fr] gap-5 md:gap-7 items-start">
+        <div className="flex flex-col items-center gap-2">
+          {onPhotoChange ? (
+            <label className="passport-photo-edit group cursor-pointer block relative">
+              <input type="file" accept="image/*" className="sr-only" onChange={onFile} />
+              {passport.photo_url ? (
+                <AnalogPhoto
+                  src={passport.photo_url}
+                  alt={passport.display_name}
+                  imgClassName="h-40 w-36"
+                  className="!rotate-0 pointer-events-none"
+                />
+              ) : (
+                <div className="w-36 h-40 border border-dashed border-ink/40 bg-sand/40 flex items-center justify-center text-earth/60 text-xs text-center p-3">
+                  Sem foto
+                </div>
+              )}
+              <span className="passport-photo-edit__overlay" aria-hidden>
+                <Camera size={22} strokeWidth={1.75} />
+                <span className="text-[11px] font-medium mt-1">Trocar foto</span>
+              </span>
+              <span className="sr-only">Trocar fotografia do viajante</span>
+            </label>
+          ) : passport.photo_url ? (
+            <AnalogPhoto
+              src={passport.photo_url}
+              alt={passport.display_name}
+              imgClassName="h-40 w-36"
+              className="!rotate-0"
+            />
+          ) : (
+            <div className="w-36 h-40 border border-dashed border-ink/40 bg-sand/40 flex items-center justify-center text-earth/60 text-xs text-center p-3">
+              Sem foto
+            </div>
+          )}
+          <p className="text-[10px] text-ink/80 text-center leading-snug max-w-[9rem]">
+            Fotografia do viajante autorizado
+          </p>
         </div>
-        <LicenseClause name={passport.display_name} />
-        <div className="manifest-foot">
-          <div>
-            <p className="manifest-sign">{passport.signature || passport.display_name}</p>
-            <p className="manifest-sign-label">Assinatura do viajante</p>
+
+        <div className="relative min-w-0">
+          <h1 className="font-display text-lg md:text-xl uppercase tracking-wide leading-tight text-ink">
+            Licença Permanente de Viagem
+          </h1>
+          <p className="font-mono text-sm text-stamp mt-1.5">{passport.passport_number}</p>
+
+          <dl className="mt-4 space-y-2.5 text-sm">
+            <Field label="Emitido para" value={passport.display_name} handwritten />
+            <Field label="Usuário" value={`@${passport.username}`} />
+            <Field label="Data de nascimento" value={formatDate(passport.date_of_birth)} />
+            <Field label="Local de emissão" value={passport.place_of_issue || '—'} handwritten />
+            <Field label="Data de emissão" value={formatDate(passport.issued_at)} />
+          </dl>
+
+          <div className="mt-5 relative md:pr-28">
+            <p className="font-mono text-[11px] uppercase tracking-wider text-center text-ink mb-1.5">
+              Licença de viagem
+            </p>
+            <p className="font-mono text-[11px] md:text-xs leading-relaxed text-ink/90 text-justify">
+              Certifica-se que a pessoa nomeada e descrita acima está autorizada a viajar, circular e
+              explorar livremente, salvo se impedida por lei.
+            </p>
+            <p className="font-mono text-[11px] uppercase tracking-wider text-center text-ink mt-3 mb-1.5">
+              Aviso importante
+            </p>
+            <p className="font-mono text-[11px] md:text-xs leading-relaxed text-ink/90 text-justify">
+              O portador desta licença registra os mapas, caminhos e memórias de suas viagens neste
+              modesto espaço como e quando bem entender, salvo indicação em contrário.
+            </p>
+
+            <div
+              className="passport-ink-stamp mt-5 mx-auto md:mt-0 md:mx-0 md:absolute md:right-0 md:top-[42%] md:-translate-y-1/2 pointer-events-none select-none"
+              aria-hidden
+            >
+              <span>Lume Maps</span>
+              <span className="passport-ink-stamp__sub">{passport.passport_number}</span>
+            </div>
           </div>
-          <div className="passport-ink-stamp manifest-stamp pointer-events-none select-none" aria-hidden>
-            <span>Lume Maps</span>
-            <span className="passport-ink-stamp__sub">{passport.passport_number}</span>
+
+          <div className="mt-8 max-w-[240px]">
+            <p className="font-script text-3xl text-ink leading-none doc-field pb-1">
+              {passport.signature || passport.display_name}
+            </p>
+            <p className="text-[10px] text-ink/80 mt-1.5">Assinatura do viajante autorizado</p>
           </div>
         </div>
       </div>
-    </article>
+    </StarFrame>
   )
 })
 
@@ -280,7 +280,9 @@ function PassportTicket({ passport }: { passport: Passport }) {
 
           <div className="passport-ticket__notes">
             <p className="font-mono text-[8px] uppercase tracking-wider text-ink/70">Licença</p>
-            <LicenseClause name={passport.display_name} compact />
+            <p className="font-mono text-[8px] sm:text-[9px] leading-snug text-ink/85 line-clamp-2">
+              Autorizado a viajar, circular e explorar livremente, salvo se impedido por lei.
+            </p>
             <p className="font-mono text-[8px] uppercase tracking-wider text-ink/70 mt-1.5">
               Importante
             </p>
@@ -299,6 +301,25 @@ function PassportTicket({ passport }: { passport: Passport }) {
         </div>
       </div>
     </StarFrame>
+  )
+}
+
+function Field({
+  label,
+  value,
+  handwritten,
+}: {
+  label: string
+  value: string
+  handwritten?: boolean
+}) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-[minmax(7rem,140px)_minmax(0,1fr)] gap-0.5 sm:gap-2 items-end doc-field min-w-0">
+      <dt className="text-[11px] text-ink/75">{label}</dt>
+      <dd className={`min-w-0 break-words ${handwritten ? 'font-script text-2xl leading-none' : 'font-medium'}`}>
+        {value}
+      </dd>
+    </div>
   )
 }
 
