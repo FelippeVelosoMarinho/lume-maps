@@ -105,7 +105,7 @@ export function WarmMap({
   const lineColor = pathColor || JOURNEY_COLOR_PALETTE[0]
 
   return (
-    <div className={className ?? 'h-full w-full'}>
+    <div className={`map-stage ${className ?? 'h-full w-full'}`}>
       <MapContainer
         center={center}
         zoom={8}
@@ -159,6 +159,7 @@ export function WarmMap({
           />
         ))}
       </MapContainer>
+      <div className="map-radar" aria-hidden />
     </div>
   )
 }

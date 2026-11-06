@@ -320,6 +320,7 @@ export function SharedTravelsMap({ layers, className, defaultExpanded = false }:
             </Marker>
           ))}
         </MapContainer>
+        <div className="map-radar" aria-hidden />
       </div>
     </div>
   )

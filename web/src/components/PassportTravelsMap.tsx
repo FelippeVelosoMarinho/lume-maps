@@ -293,6 +293,7 @@ export function PassportTravelsMap({ journeys, className }: Props) {
             </Marker>
           ))}
         </MapContainer>
+        <div className="map-radar" aria-hidden />
       </div>
     </div>
   )

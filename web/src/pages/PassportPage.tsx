@@ -1,6 +1,6 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Lock, Share2, Trash2 } from 'lucide-react'
+import { Download, Lock, Share2, Trash2 } from 'lucide-react'
 import { api, type Passport, type PassportTravels } from '../lib/api'
 import { formatPeriod } from '../lib/dates'
 import { stripMarkdown } from '../lib/markdown'
@@ -26,6 +26,8 @@ export function PassportPage() {
   const [editing, setEditing] = useState(false)
   const [privacyOpen, setPrivacyOpen] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const cardRef = useRef<HTMLElement>(null)
   const isOwner = me?.passport.username === username
 
   useEffect(() => {
@@ -58,6 +60,32 @@ export function PassportPage() {
       cancelled = true
     }
   }, [username, isOwner])
+
+  async function downloadCard() {
+    if (!cardRef.current || !passport) return
+    setExporting(true)
+    try {
+      await document.fonts.ready
+      const { toPng } = await import('html-to-image')
+      const dataUrl = await toPng(cardRef.current, {
+        pixelRatio: 2,
+        cacheBust: true,
+        backgroundColor: '#f4ead6',
+        filter: (node) => {
+          if (!(node instanceof HTMLElement)) return true
+          return !node.hasAttribute('data-export-ignore')
+        },
+      })
+      const a = document.createElement('a')
+      a.href = dataUrl
+      a.download = `licenca-${passport.username}.png`
+      a.click()
+    } catch {
+      toast.error('Não foi possível gerar o cartão')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   async function share() {
     if (!me?.passport) {
@@ -338,10 +366,24 @@ export function PassportPage() {
                 </button>
               </form>
             ) : (
-              <PassportCard
-                passport={passport}
-                onPhotoChange={isOwner ? onPhoto : undefined}
-              />
+              <div className="space-y-3">
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    className="manifest-download"
+                    disabled={exporting}
+                    onClick={() => void downloadCard()}
+                  >
+                    <Download size={16} strokeWidth={2} />
+                    {exporting ? 'Gerando…' : 'Baixar cartão'}
+                  </button>
+                </div>
+                <PassportCard
+                  ref={cardRef}
+                  passport={passport}
+                  onPhotoChange={isOwner ? onPhoto : undefined}
+                />
+              </div>
             )}
 
             {showTravelsMap && (
