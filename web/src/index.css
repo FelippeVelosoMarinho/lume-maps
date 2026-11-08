@@ -87,8 +87,8 @@ body {
   z-index: 2;
   background-repeat: repeat-x;
   background-position: center;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='22' viewBox='0 0 72 22'%3E%3Cpath d='M1 13c10 0 16-7 30-5l1 5C20 15 12 18 1 17Z' fill='%23c8c1b6'/%3E%3Cpath d='M6 7c12 1 18 6 28 4l1 4C26 17 16 12 6 11Z' fill='%23f7f3ec'/%3E%3Cpath d='M10 15c10-1 16-5 24-3l1 4C28 14 20 19 10 18Z' fill='%23f3a8cc'/%3E%3Cpolygon fill='%23e23c8a' points='58,3 60.6,9 67,9 61.8,12.6 63.6,18.6 58,15 52.4,18.6 54.2,12.6 49,9 55.4,9'/%3E%3C/svg%3E");
-  background-size: 72px 22px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='22' viewBox='0 0 180 22'%3E%3Cpath d='M1 14c8 0 14-6 26-4l1 4C16 16 8 18 1 17Z' fill='%23F3A8CC'/%3E%3Cpolygon fill='%23E23C8A' points='48,3 50.6,9 57,9 51.8,12.6 53.6,18.6 48,15 42.4,18.6 44.2,12.6 39,9 45.4,9'/%3E%3Cpath d='M61 14c8 0 14-6 26-4l1 4C76 16 68 18 61 17Z' fill='%23F6D56B'/%3E%3Cpolygon fill='%23E2B133' points='108,3 110.6,9 117,9 111.8,12.6 113.6,18.6 108,15 102.4,18.6 104.2,12.6 99,9 105.4,9'/%3E%3Cpath d='M121 14c8 0 14-6 26-4l1 4C136 16 128 18 121 17Z' fill='%238ED4E4'/%3E%3Cpolygon fill='%232AA8C9' points='168,3 170.6,9 177,9 171.8,12.6 173.6,18.6 168,15 162.4,18.6 164.2,12.6 159,9 165.4,9'/%3E%3C/svg%3E");
+  background-size: 180px 22px;
 }
 
 .passport-stars--top,
@@ -113,8 +113,8 @@ body {
   bottom: 12px;
   width: 22px;
   background-repeat: repeat-y;
-  background-size: 22px 72px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='72' viewBox='0 0 22 72'%3E%3Cpath d='M13 1c0 10-7 16-5 30l5 1C15 20 18 12 17 1Z' fill='%23c8c1b6'/%3E%3Cpath d='M7 6c1 12 6 18 4 28l4 1C17 26 12 16 11 6Z' fill='%23f7f3ec'/%3E%3Cpath d='M15 10c-1 10-5 16-3 24l4 1C14 28 19 20 18 10Z' fill='%23f3a8cc'/%3E%3Cpolygon fill='%23e23c8a' points='3,58 9,60.6 9,67 12.6,61.8 18.6,63.6 15,58 18.6,52.4 12.6,54.2 9,49 9,55.4'/%3E%3C/svg%3E");
+  background-size: 22px 180px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='180' viewBox='0 0 22 180'%3E%3Cpath d='M14 1c0 8-6 14-4 26l4 1C16 16 18 8 17 1Z' fill='%23F3A8CC'/%3E%3Cpolygon fill='%23E23C8A' points='3,48 9,50.6 9,57 12.6,51.8 18.6,53.6 15,48 18.6,42.4 12.6,44.2 9,39 9,45.4'/%3E%3Cpath d='M14 61c0 8-6 14-4 26l4 1C16 76 18 68 17 61Z' fill='%23F6D56B'/%3E%3Cpolygon fill='%23E2B133' points='3,108 9,110.6 9,117 12.6,111.8 18.6,113.6 15,108 18.6,102.4 12.6,104.2 9,99 9,105.4'/%3E%3Cpath d='M14 121c0 8-6 14-4 26l4 1C16 136 18 128 17 121Z' fill='%238ED4E4'/%3E%3Cpolygon fill='%232AA8C9' points='3,168 9,170.6 9,177 12.6,171.8 18.6,173.6 15,168 18.6,162.4 12.6,164.2 9,159 9,165.4'/%3E%3C/svg%3E");
 }
 
 .passport-stars--left {
@@ -124,6 +124,22 @@ body {
 
 .passport-stars--right {
   right: 2px;
+}
+
+.passport-typed {
+  font-family: "Special Elite", "Courier New", monospace;
+  font-size: 0.95rem;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: #1a1510;
+  border-bottom: 1px dashed #1a1510;
+  padding: 0 0.12em 0.02em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.passport-typed--tiny {
+  font-size: 0.68rem;
 }
 
 .passport-card__inner {
@@ -149,7 +165,7 @@ body {
   left: 10px;
   right: 10px;
   height: 14px;
-  background-size: 42px 14px;
+  background-size: 115px 14px;
 }
 
 .passport-card--ticket .passport-stars--left,
@@ -157,7 +173,7 @@ body {
   top: 10px;
   bottom: 10px;
   width: 14px;
-  background-size: 14px 42px;
+  background-size: 14px 115px;
 }
 
 /* Ticket retangular (CMIYGL) — convite */

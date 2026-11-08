@@ -199,8 +199,8 @@ export const PassportCard = forwardRef<HTMLElement, PassportCardProps>(function 
               Licença de viagem
             </p>
             <p className="font-mono text-[11px] md:text-xs leading-relaxed text-ink/90 text-justify">
-              Certifica-se que a pessoa nomeada e descrita acima está autorizada a viajar, circular e
-              explorar livremente, salvo se impedida por lei.
+              Certifica-se que <span className="passport-typed">{passport.display_name}</span> está
+              autorizada a viajar, circular e explorar livremente, salvo se impedida por lei.
             </p>
             <p className="font-mono text-[11px] uppercase tracking-wider text-center text-ink mt-3 mb-1.5">
               Aviso importante
@@ -280,8 +280,9 @@ function PassportTicket({ passport }: { passport: Passport }) {
 
           <div className="passport-ticket__notes">
             <p className="font-mono text-[8px] uppercase tracking-wider text-ink/70">Licença</p>
-            <p className="font-mono text-[8px] sm:text-[9px] leading-snug text-ink/85 line-clamp-2">
-              Autorizado a viajar, circular e explorar livremente, salvo se impedido por lei.
+            <p className="font-mono text-[8px] sm:text-[9px] leading-snug text-ink/85 line-clamp-3">
+              Certifica-se que <span className="passport-typed passport-typed--tiny">{passport.display_name}</span>{' '}
+              está autorizada a viajar, circular e explorar livremente, salvo se impedida por lei.
             </p>
             <p className="font-mono text-[8px] uppercase tracking-wider text-ink/70 mt-1.5">
               Importante
