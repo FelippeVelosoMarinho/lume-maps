@@ -1,4 +1,4 @@
-import type { ChangeEvent, CSSProperties, ReactNode } from 'react'
+import { forwardRef, type ChangeEvent, type CSSProperties, type ReactNode, type Ref } from 'react'
 import { Camera } from 'lucide-react'
 import type { Passport, Stamp } from '../lib/api'
 import { AnalogPhoto } from './AnalogPhoto'
@@ -96,12 +96,14 @@ export function StampSeal({ stamp, size = 112 }: { stamp: Stamp; size?: number }
 function StarFrame({
   children,
   className = '',
+  cardRef,
 }: {
   children: ReactNode
   className?: string
+  cardRef?: Ref<HTMLElement>
 }) {
   return (
-    <article className={`passport-card paper-grain relative bg-paper ${className}`}>
+    <article ref={cardRef} className={`passport-card paper-grain relative bg-paper ${className}`}>
       <div className="passport-stars passport-stars--top" aria-hidden />
       <div className="passport-stars passport-stars--bottom" aria-hidden />
       <div className="passport-stars passport-stars--left" aria-hidden />
@@ -122,11 +124,10 @@ type PassportCardProps = {
   variant?: 'default' | 'ticket'
 }
 
-export function PassportCard({
-  passport,
-  onPhotoChange,
-  variant = 'default',
-}: PassportCardProps) {
+export const PassportCard = forwardRef<HTMLElement, PassportCardProps>(function PassportCard(
+  { passport, onPhotoChange, variant = 'default' },
+  ref,
+) {
   if (variant === 'ticket') {
     return <PassportTicket passport={passport} />
   }
@@ -138,7 +139,7 @@ export function PassportCard({
   }
 
   return (
-    <StarFrame>
+    <StarFrame cardRef={ref}>
       <div className="grid md:grid-cols-[150px_1fr] gap-5 md:gap-7 items-start">
         <div className="flex flex-col items-center gap-2">
           {onPhotoChange ? (
@@ -198,8 +199,8 @@ export function PassportCard({
               Licença de viagem
             </p>
             <p className="font-mono text-[11px] md:text-xs leading-relaxed text-ink/90 text-justify">
-              Certifica-se que a pessoa nomeada e descrita acima está autorizada a viajar, circular e
-              explorar livremente, salvo se impedida por lei.
+              Certifica-se que <span className="passport-typed">{passport.display_name}</span> está
+              autorizada a viajar, circular e explorar livremente, salvo se impedida por lei.
             </p>
             <p className="font-mono text-[11px] uppercase tracking-wider text-center text-ink mt-3 mb-1.5">
               Aviso importante
@@ -228,7 +229,7 @@ export function PassportCard({
       </div>
     </StarFrame>
   )
-}
+})
 
 /** Passaporte retangular largo — tela de convite / estética CMIYGL. */
 function PassportTicket({ passport }: { passport: Passport }) {
@@ -279,8 +280,9 @@ function PassportTicket({ passport }: { passport: Passport }) {
 
           <div className="passport-ticket__notes">
             <p className="font-mono text-[8px] uppercase tracking-wider text-ink/70">Licença</p>
-            <p className="font-mono text-[8px] sm:text-[9px] leading-snug text-ink/85 line-clamp-2">
-              Autorizado a viajar, circular e explorar livremente, salvo se impedido por lei.
+            <p className="font-mono text-[8px] sm:text-[9px] leading-snug text-ink/85 line-clamp-3">
+              Certifica-se que <span className="passport-typed passport-typed--tiny">{passport.display_name}</span>{' '}
+              está autorizada a viajar, circular e explorar livremente, salvo se impedida por lei.
             </p>
             <p className="font-mono text-[8px] uppercase tracking-wider text-ink/70 mt-1.5">
               Importante

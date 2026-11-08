@@ -73,66 +73,73 @@ body {
   padding-bottom: 0.25rem;
 }
 
-/* Cartão de licença: estrela em todo o perímetro */
+/* Cartão de licença: estrela com rastro no perímetro */
 .passport-card {
   background: var(--color-paper);
   border: 1px solid var(--color-ink);
-  padding: 14px 12px;
+  padding: 28px 24px;
   overflow: hidden;
 }
 
 .passport-stars {
   position: absolute;
-  background-color: var(--color-ink);
-  /* tile 24×24 com estrela ~10px no centro → gap visível entre estrelas */
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon fill='black' points='12,3.5 13.3,8.2 18.2,8.2 14.3,11.1 15.7,15.8 12,12.9 8.3,15.8 9.7,11.1 5.8,8.2 10.7,8.2'/%3E%3C/svg%3E");
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon fill='black' points='12,3.5 13.3,8.2 18.2,8.2 14.3,11.1 15.7,15.8 12,12.9 8.3,15.8 9.7,11.1 5.8,8.2 10.7,8.2'/%3E%3C/svg%3E");
-  mask-size: 20px 20px;
-  -webkit-mask-size: 20px 20px;
   pointer-events: none;
   z-index: 2;
+  background-repeat: repeat-x;
+  background-position: center;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='22' viewBox='0 0 180 22'%3E%3Cpath d='M1 14c8 0 14-6 26-4l1 4C16 16 8 18 1 17Z' fill='%23F3A8CC'/%3E%3Cpolygon fill='%23E23C8A' points='48,3 50.6,9 57,9 51.8,12.6 53.6,18.6 48,15 42.4,18.6 44.2,12.6 39,9 45.4,9'/%3E%3Cpath d='M61 14c8 0 14-6 26-4l1 4C76 16 68 18 61 17Z' fill='%23F6D56B'/%3E%3Cpolygon fill='%23E2B133' points='108,3 110.6,9 117,9 111.8,12.6 113.6,18.6 108,15 102.4,18.6 104.2,12.6 99,9 105.4,9'/%3E%3Cpath d='M121 14c8 0 14-6 26-4l1 4C136 16 128 18 121 17Z' fill='%238ED4E4'/%3E%3Cpolygon fill='%232AA8C9' points='168,3 170.6,9 177,9 171.8,12.6 173.6,18.6 168,15 162.4,18.6 164.2,12.6 159,9 165.4,9'/%3E%3C/svg%3E");
+  background-size: 180px 22px;
 }
 
 .passport-stars--top,
 .passport-stars--bottom {
-  left: 16px;
-  right: 16px;
-  height: 11px;
-  mask-size: 20px 11px;
-  -webkit-mask-size: 20px 11px;
-  mask-repeat: repeat-x;
-  -webkit-mask-repeat: repeat-x;
-  mask-position: center;
-  -webkit-mask-position: center;
+  left: 12px;
+  right: 12px;
+  height: 22px;
 }
 
 .passport-stars--top {
-  top: 5px;
+  top: 3px;
 }
 
 .passport-stars--bottom {
-  bottom: 5px;
+  bottom: 3px;
+  transform: scaleX(-1);
 }
 
 .passport-stars--left,
 .passport-stars--right {
-  top: 16px;
-  bottom: 16px;
-  width: 11px;
-  mask-size: 11px 20px;
-  -webkit-mask-size: 11px 20px;
-  mask-repeat: repeat-y;
-  -webkit-mask-repeat: repeat-y;
-  mask-position: center;
-  -webkit-mask-position: center;
+  top: 12px;
+  bottom: 12px;
+  width: 22px;
+  background-repeat: repeat-y;
+  background-size: 22px 180px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='180' viewBox='0 0 22 180'%3E%3Cpath d='M14 1c0 8-6 14-4 26l4 1C16 16 18 8 17 1Z' fill='%23F3A8CC'/%3E%3Cpolygon fill='%23E23C8A' points='3,48 9,50.6 9,57 12.6,51.8 18.6,53.6 15,48 18.6,42.4 12.6,44.2 9,39 9,45.4'/%3E%3Cpath d='M14 61c0 8-6 14-4 26l4 1C16 76 18 68 17 61Z' fill='%23F6D56B'/%3E%3Cpolygon fill='%23E2B133' points='3,108 9,110.6 9,117 12.6,111.8 18.6,113.6 15,108 18.6,102.4 12.6,104.2 9,99 9,105.4'/%3E%3Cpath d='M14 121c0 8-6 14-4 26l4 1C16 136 18 128 17 121Z' fill='%238ED4E4'/%3E%3Cpolygon fill='%232AA8C9' points='3,168 9,170.6 9,177 12.6,171.8 18.6,173.6 15,168 18.6,162.4 12.6,164.2 9,159 9,165.4'/%3E%3C/svg%3E");
 }
 
 .passport-stars--left {
-  left: 5px;
+  left: 2px;
+  transform: scaleY(-1);
 }
 
 .passport-stars--right {
-  right: 5px;
+  right: 2px;
+}
+
+.passport-typed {
+  font-family: "Special Elite", "Courier New", monospace;
+  font-size: 0.95rem;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: #1a1510;
+  border-bottom: 1px dashed #1a1510;
+  padding: 0 0.12em 0.02em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.passport-typed--tiny {
+  font-size: 0.68rem;
 }
 
 .passport-card__inner {
@@ -145,7 +152,7 @@ body {
 
 @media (min-width: 768px) {
   .passport-card {
-    padding: 20px 18px;
+    padding: 32px 28px;
   }
   .passport-card__inner {
     padding: 1.1rem 1.25rem 1.25rem;
@@ -155,25 +162,23 @@ body {
 /* Ticket: um pouco mais de respiro nas estrelas */
 .passport-card--ticket .passport-stars--top,
 .passport-card--ticket .passport-stars--bottom {
-  left: 14px;
-  right: 14px;
-  mask-size: 22px 10px;
-  -webkit-mask-size: 22px 10px;
-  height: 10px;
+  left: 10px;
+  right: 10px;
+  height: 14px;
+  background-size: 115px 14px;
 }
 
 .passport-card--ticket .passport-stars--left,
 .passport-card--ticket .passport-stars--right {
-  top: 14px;
-  bottom: 14px;
-  mask-size: 10px 22px;
-  -webkit-mask-size: 10px 22px;
-  width: 10px;
+  top: 10px;
+  bottom: 10px;
+  width: 14px;
+  background-size: 14px 115px;
 }
 
 /* Ticket retangular (CMIYGL) — convite */
 .passport-card--ticket {
-  padding: 10px 12px;
+  padding: 16px 14px;
   aspect-ratio: 16 / 10;
   max-width: 100%;
   width: 100%;
@@ -249,7 +254,7 @@ body {
 
 @media (min-width: 640px) {
   .passport-card--ticket {
-    padding: 12px 14px;
+    padding: 18px 16px;
   }
   .passport-card--ticket .passport-card__inner {
     padding: 0.7rem 0.85rem 0.75rem;
